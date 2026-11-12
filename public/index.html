@@ -4,92 +4,120 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#11161c" media="(prefers-color-scheme: dark)">
-<title>Přepis zvuku</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232f4bc4'/><path d='M16 7a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0v-6a3 3 0 0 0-3-3zM22 15a6 6 0 0 1-12 0M16 21v4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
+<meta name="theme-color" content="#e3e9e6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1513" media="(prefers-color-scheme: dark)">
+<title>Přepis</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%231f3d37'/><circle cx='16' cy='16' r='6.5' fill='%23f0524a'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
 <style>
+/* Diktafon a arch: tmavý přístroj na nahrávání, bílý arch na text. */
 :root {
   color-scheme: light;
-  --paper: #eef1f4;
-  --surface: #ffffff;
-  --sunken: #f5f7f9;
-  --ink: #15202b;
-  --muted: #5a6773;
-  --line: #d8dee4;
-  --line-strong: #b4bec8;
-  --accent: #2f4bc4;
-  --accent-hover: #263fa8;
-  --accent-weak: #e8ecfb;
-  --accent-ink: #ffffff;
-  --rec: #c2363f;
-  --rec-weak: #fbeaeb;
-  --ok: #1f7a4d;
-  --shadow: 0 1px 2px rgb(16 24 40 / .05), 0 6px 20px rgb(16 24 40 / .06);
-  --radius: 14px;
-  --ui: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --read: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --desk: #e3e9e6;          /* podklad stránky */
+  --paper: #ffffff;         /* arch */
+  --ink: #1a2321;
+  --ink-muted: #5c6b66;
+  --rule: #d3dcd8;
+  --green: #1f3d37;         /* přístroj */
+  --lamp: #f0524a;          /* kontrolka a nahrávání, jediná teplá barva */
+  --lamp-off: #b6c3be;
+  --fail: #b3362f;
+  --focus: #1f3d37;
+  --btn-ink-bg: #1f3d37;
+  --btn-ink-fg: #ffffff;
+  --paper-shadow: 0 1px 2px rgb(31 61 55 / .08), 0 22px 44px -22px rgb(31 61 55 / .4);
+  --ui: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --read: "Literata", Georgia, "Times New Roman", serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --paper: #11161c;
-    --surface: #19212a;
-    --sunken: #141b22;
-    --ink: #e6ebf0;
-    --muted: #95a2ae;
-    --line: #2a343e;
-    --line-strong: #3d4955;
-    --accent: #8ea2ff;
-    --accent-hover: #a9b8ff;
-    --accent-weak: #222c52;
-    --accent-ink: #0e1430;
-    --rec: #ff6b73;
-    --rec-weak: #3a1d21;
-    --ok: #5fd39a;
-    --shadow: none;
+    --desk: #0e1513;
+    --paper: #161f1d;
+    --ink: #dde5e1;
+    --ink-muted: #93a39e;
+    --rule: #263330;
+    --lamp-off: #3a4744;
+    --fail: #ff8a84;
+    --focus: #9fcdbe;
+    --btn-ink-bg: #cfe3db;
+    --btn-ink-fg: #10221e;
+    --paper-shadow: 0 0 0 1px #24302d;
   }
 }
+/* Barvy přístroje jsou v obou režimech stejné. */
+.device, .gate-card {
+  color-scheme: dark;
+  --d-bg: #1f3d37;
+  --d-well: #16302b;
+  --d-ink: #e8f0ec;
+  --d-muted: #a6bbb4;
+  --d-line: #3d5f57;
+  --d-field: #18332e;
+  --tape-on: #e8f0ec;
+  --tape-off: #45685f;
+  --focus: #e8f0ec;
+  --lamp-off: #4b6f67;
+  background: var(--d-bg);
+  color: var(--d-ink);
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--paper);
+  background: var(--desk);
   color: var(--ink);
-  font: 400 1rem/1.55 var(--ui);
+  font: 400 1rem/1.5 var(--ui);
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.i { width: 1.05rem; height: 1.05rem; flex: none; }
-.hint { color: var(--muted); font-size: .875rem; margin: .4rem 0 0; }
 
-/* ---------- tlačítka ---------- */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
-  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
-  border-radius: 8px; padding: .45rem .8rem; cursor: pointer; font-weight: 700; font-size: .9rem; line-height: 1.3;
+/* ---------- značka: kontrolka + slovo ---------- */
+.mark { display: flex; align-items: center; gap: .55rem; }
+.wordmark { font-weight: 700; font-size: 1.5rem; line-height: 1; letter-spacing: -.015em; }
+.lamp {
+  width: .7rem; height: .7rem; border-radius: 50%; flex: none;
+  background: var(--lamp-off); transition: background .2s, box-shadow .2s;
 }
-.btn:hover:not(:disabled) { background: var(--sunken); }
-.btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn-solid { background: var(--ink); border-color: var(--ink); color: var(--surface); }
-.btn-solid:hover:not(:disabled) { background: var(--ink); opacity: .88; }
-.btn.done, .btn.done:hover:not(:disabled) { background: var(--ok); border-color: var(--ok); color: var(--surface); opacity: 1; }
-.btn-ghost { border-color: var(--line); background: transparent; font-weight: 400; padding: .35rem .7rem; }
-.primary {
-  width: 100%; display: flex; align-items: center; justify-content: center; gap: .6rem;
-  border: 0; border-radius: 10px; padding: .85rem 1rem; cursor: pointer;
-  background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 1.05rem;
+.lamp.on { background: var(--lamp); box-shadow: 0 0 0 4px rgb(240 82 74 / .22), 0 0 14px rgb(240 82 74 / .6); }
+
+.link {
+  background: none; border: 0; padding: .25rem 0; cursor: pointer; color: inherit;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
 }
-.primary:hover:not(:disabled) { background: var(--accent-hover); }
-.primary:disabled { opacity: .45; cursor: not-allowed; }
+.link:hover { text-decoration-thickness: 2px; }
+
+/* ---------- přihlášení ---------- */
+.gate { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem 1rem; }
+.gate-card { width: min(24rem, 100%); border-radius: 22px; padding: 2rem 1.75rem 1.5rem; display: grid; gap: 1.25rem; }
+.gate-card .wordmark { font-size: 2.25rem; }
+.gate-card .lamp { width: .95rem; height: .95rem; }
+.gate-card p { margin: 0; }
+.gate-lead { font-size: 1.125rem; line-height: 1.45; }
+.gate-panel { display: grid; gap: 1rem; }
+.gate-state { display: flex; align-items: center; gap: .6rem; color: var(--d-muted); }
+.gate-foot { font-size: .875rem; color: var(--d-muted); }
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: .75rem; width: 100%;
+  padding: .8rem 1rem; border: 0; border-radius: 12px; cursor: pointer;
+  background: #ffffff; color: #1f1f1f; font-weight: 700;
+}
+.google-btn:hover { background: #eef3f0; }
+.google-btn svg { width: 1.15rem; height: 1.15rem; }
+.d-alert {
+  margin: 0; padding: .75rem .9rem; border-radius: 10px;
+  background: rgb(240 82 74 / .14); border-left: 3px solid var(--lamp);
+}
+.d-alert strong { display: block; color: #ff9a94; margin-bottom: .15rem; }
+.d-alert p { margin: 0; }
 .spinner {
   width: 1rem; height: 1rem; flex: none; display: inline-block;
   border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
@@ -97,231 +125,196 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.alert {
-  background: var(--rec-weak); border: 1px solid var(--line); border-left: 4px solid var(--rec);
-  border-radius: 10px; padding: .7rem .9rem; margin: 0; text-align: left;
-}
-.alert strong { display: block; color: var(--rec); margin-bottom: .15rem; }
-.alert p { margin: 0; }
-
-/* ---------- přihlašovací obrazovka ---------- */
-.gate { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem 1rem; }
-.gate-card {
-  width: min(25rem, 100%); padding: 2.25rem 1.75rem 1.75rem; text-align: center;
-  display: grid; gap: 1.1rem; justify-items: center;
-}
-.gate-card h1 { margin: 0; font-size: 1.45rem; line-height: 1.2; letter-spacing: -.01em; }
-.gate-card p { margin: 0; color: var(--muted); }
-.gate-panel { display: grid; gap: 1rem; width: 100%; }
-.gate-state { display: flex; align-items: center; justify-content: center; gap: .6rem; color: var(--muted); }
-.gate-foot { font-size: .8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; width: 100%; }
-.google-btn {
-  display: flex; align-items: center; justify-content: center; gap: .75rem; width: 100%;
-  padding: .75rem 1rem; border-radius: 10px; border: 1px solid #747775;
-  background: #ffffff; color: #1f1f1f; font-weight: 700; cursor: pointer;
-}
-.google-btn:hover { background: #f6f8fa; }
-.google-btn svg { width: 1.15rem; height: 1.15rem; }
-@media (prefers-color-scheme: dark) {
-  .google-btn { background: #131314; color: #e3e3e3; border-color: #8e918f; }
-  .google-btn:hover { background: #1f1f21; }
-}
-
-/* ---------- rozvržení aplikace ---------- */
-.wrap { max-width: 74rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
-@media (min-width: 640px) { .wrap { padding: 1.5rem 1.5rem 3rem; } }
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
-.brand { display: flex; align-items: center; gap: .65rem; min-width: 0; }
-.brand h1 { font-size: 1.25rem; margin: 0; line-height: 1.2; letter-spacing: -.01em; white-space: nowrap; }
-.brand-mark {
-  width: 2.25rem; height: 2.25rem; border-radius: 10px; flex: none;
-  background: var(--accent); color: var(--accent-ink); display: grid; place-items: center;
-}
-.brand-mark svg { width: 1.2rem; height: 1.2rem; }
-.brand-mark.lg { width: 3.25rem; height: 3.25rem; border-radius: 14px; }
-.brand-mark.lg svg { width: 1.7rem; height: 1.7rem; }
-.account { display: flex; align-items: center; gap: .6rem; font-size: .9rem; color: var(--muted); min-width: 0; }
-.account .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 18rem; }
+/* ---------- stůl ---------- */
+.app { max-width: 78rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+@media (min-width: 640px) { .app { padding: 1.5rem 1.5rem 3rem; } }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.account { display: flex; align-items: baseline; gap: .9rem; font-size: .875rem; color: var(--ink-muted); min-width: 0; }
+.account .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 20rem; }
 @media (max-width: 480px) { .account .email { display: none; } }
 
-.grid { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 27rem) minmax(0, 1fr); align-items: start; }
-@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.desk { display: grid; grid-template-columns: minmax(0, 26rem) minmax(0, 1fr); gap: 2rem; align-items: start; }
+@media (max-width: 900px) { .desk { grid-template-columns: 1fr; gap: 1.25rem; } }
 
-/* ---------- zadání ---------- */
-.form { padding: 1.25rem; }
-.section + .section { border-top: 1px solid var(--line); margin-top: 1.35rem; padding-top: 1.35rem; }
-.section-head { display: flex; align-items: center; gap: .6rem; margin: 0 0 .9rem; font-size: 1.05rem; line-height: 1.3; }
-.num {
-  width: 1.6rem; height: 1.6rem; border-radius: 50%; flex: none; display: grid; place-items: center;
-  background: var(--accent-weak); color: var(--accent); font-size: .85rem; font-weight: 700;
-}
-.opt { color: var(--muted); font-weight: 400; font-size: .875rem; }
-.field + .field { margin-top: 1rem; }
-.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: .4rem; }
-.label { font-weight: 700; display: block; }
-.count { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.count.over { color: var(--rec); font-weight: 700; }
-.field.off textarea { opacity: .5; }
+/* ---------- přístroj ---------- */
+.device { border-radius: 22px; padding: 1.1rem; }
+@media (min-width: 640px) { .device { padding: 1.25rem; } }
 
-select, textarea {
-  width: 100%; background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem;
-}
-select:hover, textarea:hover:not(:disabled) { border-color: var(--line-strong); }
-textarea { resize: vertical; min-height: 5.5rem; }
-
-/* přepínač zdroje */
 .seg {
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; padding: 3px;
-  background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
+  background: var(--d-well); border-radius: 12px;
 }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label {
-  display: flex; align-items: center; justify-content: center; gap: .45rem;
-  padding: .5rem .6rem; border-radius: 7px; cursor: pointer; color: var(--muted); font-weight: 700; font-size: .95rem;
+  display: flex; align-items: center; justify-content: center; gap: .4rem; text-align: center;
+  padding: .5rem .6rem; border-radius: 9px; cursor: pointer; color: var(--d-muted); font-weight: 500;
 }
-.seg input:checked + label { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(16 24 40 / .08); }
-.seg input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 1px; }
+.seg label:hover { color: var(--d-ink); }
+.seg input:checked + label { background: #2f544c; color: var(--d-ink); font-weight: 700; }
+.seg input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 1px; }
+.seg input:disabled + label { cursor: not-allowed; opacity: .55; }
 
-/* nahrávání */
-.recorder {
-  margin-top: .9rem; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1.1rem;
-  padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--sunken);
-}
+.deck { margin-top: .9rem; background: var(--d-well); border-radius: 16px; padding: 1rem; }
+.rec-row { display: flex; align-items: center; gap: 1.1rem; }
 .rec-btn {
-  width: 4.75rem; height: 4.75rem; border-radius: 50%; position: relative; cursor: pointer;
-  border: 2px solid var(--rec); background: var(--surface); display: grid; place-items: center;
+  width: 4.5rem; height: 4.5rem; border-radius: 50%; flex: none; cursor: pointer;
+  border: 0; background: #10241f; box-shadow: inset 0 0 0 2px var(--d-line);
+  display: grid; place-items: center;
 }
 .rec-btn::after {
-  content: ""; width: 2rem; height: 2rem; border-radius: 50%; background: var(--rec);
-  transition: border-radius .2s, width .2s, height .2s;
+  content: ""; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--lamp);
+  transition: border-radius .18s, width .18s, height .18s;
 }
-.rec-btn[aria-pressed="true"]::after { width: 1.55rem; height: 1.55rem; border-radius: 5px; }
-.rec-btn canvas { position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); pointer-events: none; }
-.rec-time { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.rec-state { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
-.recording .rec-time { color: var(--rec); }
+.rec-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--lamp); }
+.rec-btn[aria-pressed="true"]::after { width: 1.45rem; height: 1.45rem; border-radius: 4px; }
+.rec-btn:disabled { cursor: not-allowed; }
+.rec-btn:disabled::after { background: var(--d-line); }
+.clock { font-weight: 700; font-size: 3rem; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.recording .clock { color: var(--lamp); }
+.clock-sub { color: var(--d-muted); font-size: .875rem; margin-top: .3rem; }
 
-/* soubor */
-.file-drop {
-  margin-top: .9rem; position: relative; display: flex; flex-direction: column; align-items: center; gap: .3rem;
-  padding: 1.4rem 1rem; border: 1.5px dashed var(--line-strong); border-radius: 12px; background: var(--sunken);
-  text-align: center; color: var(--muted); cursor: pointer;
+.drop {
+  position: relative; display: grid; gap: .2rem; justify-items: center; text-align: center;
+  padding: 1.25rem 1rem; border: 1.5px dashed var(--d-line); border-radius: 12px; cursor: pointer;
 }
-.file-drop svg { width: 1.75rem; height: 1.75rem; color: var(--accent); margin-bottom: .2rem; }
-.file-drop strong { color: var(--ink); }
-.file-drop:hover, .file-drop.over { border-color: var(--accent); background: var(--accent-weak); }
-.file-drop:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
-.file-drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.src-err { margin-top: .75rem; }
+.drop:hover, .drop.over { border-color: var(--d-ink); }
+.drop:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.drop strong { font-size: 1rem; }
+.drop span { color: var(--d-muted); font-size: .875rem; }
 
-.picked { margin-top: .9rem; padding: .85rem .9rem; border: 1px solid var(--line); border-radius: 12px; }
-.picked-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.picked-info { min-width: 0; }
-.picked-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.picked-info span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
-.picked audio { width: 100%; margin-top: .6rem; height: 2.5rem; }
+.tape { display: block; width: 100%; height: 4.5rem; margin-top: 1rem; }
+.readout { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-top: .6rem; font-size: .875rem; color: var(--d-muted); }
+.readout #status { min-width: 0; overflow-wrap: anywhere; }
+.readout .link { color: var(--d-ink); flex: none; }
+.deck audio { display: block; width: 100%; height: 2.25rem; margin-top: .75rem; }
+.deck .d-alert { margin-top: .75rem; font-size: .9375rem; }
 
-/* volba služby */
-.choices { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-@media (max-width: 380px) { .choices { grid-template-columns: 1fr; } }
-.choices input { position: absolute; opacity: 0; pointer-events: none; }
-.choices label {
-  display: grid; gap: .15rem; padding: .7rem .8rem; cursor: pointer;
-  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+.settings { margin-top: 1.4rem; display: grid; gap: .85rem; }
+.row { display: grid; grid-template-columns: 5.25rem minmax(0, 1fr); align-items: center; gap: .75rem; }
+.row-label { color: var(--d-muted); }
+.row-hint { margin: -.4rem 0 0 6rem; font-size: .875rem; color: var(--d-muted); }
+@media (max-width: 360px) {
+  .row { grid-template-columns: 1fr; gap: .35rem; }
+  .row-hint { margin-left: 0; }
 }
-.choices label:hover { border-color: var(--line-strong); }
-.choices label span { color: var(--muted); font-size: .825rem; line-height: 1.4; }
-.choices input:checked + label { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-weak); }
-.choices input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+select, textarea {
+  width: 100%; background: var(--d-field); color: var(--d-ink);
+  border: 1px solid var(--d-line); border-radius: 10px; padding: .55rem .7rem;
+}
+select:hover, textarea:hover:not(:disabled) { border-color: var(--d-muted); }
+textarea { resize: vertical; min-height: 5.5rem; line-height: 1.45; }
+textarea::placeholder { color: #7f978f; }
 
-/* vypínač */
-.switch { display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: start; cursor: pointer; }
+.switch { display: inline-flex; align-items: center; gap: .65rem; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.track {
-  width: 2.6rem; height: 1.5rem; margin-top: .05rem; border-radius: 999px; position: relative;
-  background: var(--line-strong); transition: background .15s;
-}
+.track { width: 2.6rem; height: 1.5rem; border-radius: 999px; position: relative; background: var(--d-line); transition: background .15s; flex: none; }
 .track::after {
   content: ""; position: absolute; top: 3px; left: 3px; width: calc(1.5rem - 6px); height: calc(1.5rem - 6px);
-  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .25); transition: transform .15s;
+  border-radius: 50%; background: var(--d-ink); transition: transform .15s, background .15s;
 }
-.switch input:checked + .track { background: var(--accent); }
-.switch input:checked + .track::after { transform: translateX(1.1rem); }
-.switch input:focus-visible + .track { outline: 3px solid var(--accent); outline-offset: 2px; }
-.switch .hint { margin: .1rem 0 0; }
+.switch input:checked + .track { background: var(--d-ink); }
+.switch input:checked + .track::after { transform: translateX(1.1rem); background: var(--d-bg); }
+.switch input:focus-visible + .track { outline: 3px solid var(--focus); outline-offset: 2px; }
 
-.submit { margin-top: 1.5rem; }
-.submit .hint { text-align: center; }
-
-/* ---------- výsledek ---------- */
-.result { position: sticky; top: 1rem; display: flex; flex-direction: column; min-height: 26rem; }
-@media (max-width: 860px) { .result { position: static; min-height: 18rem; } }
-.result-head {
-  display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
-  padding: .9rem 1.25rem; border-bottom: 1px solid var(--line);
+.more { border-top: 1px solid var(--d-line); margin-top: .35rem; }
+.more summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: .6rem;
+  padding: .85rem 0 .25rem; font-weight: 700;
 }
-.result-head h2 { font-size: 1.1rem; margin: 0; }
-.actions { display: flex; gap: .5rem; }
-.result-body { flex: 1; padding: 1.25rem; display: flex; flex-direction: column; }
-.result-foot {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem 1rem;
-  padding: .75rem 1.25rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem;
+.more summary::-webkit-details-marker { display: none; }
+.more summary .chev { width: 1rem; height: 1rem; flex: none; transition: transform .15s; }
+.more[open] summary .chev { transform: rotate(90deg); }
+.more summary .more-count { margin-left: auto; font-weight: 400; font-size: .875rem; color: var(--d-muted); }
+.field { margin-top: .9rem; }
+.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: .35rem; }
+.field-head label { font-weight: 500; }
+.count { font-size: .875rem; color: var(--d-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.count.over { color: #ff9a94; font-weight: 700; }
+.field-hint { margin: .35rem 0 0; font-size: .875rem; color: var(--d-muted); }
+.field.off textarea { opacity: .45; }
+
+.go {
+  width: 100%; margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: .6rem;
+  border: 0; border-radius: 14px; padding: .95rem 1rem; cursor: pointer;
+  background: var(--d-ink); color: var(--d-bg); font-weight: 700; font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+}
+.go:hover:not(:disabled) { background: #ffffff; }
+.go:disabled { background: #2f544c; color: var(--d-muted); cursor: not-allowed; }
+.go.working:disabled { color: var(--d-ink); }
+.go-hint { margin: .6rem 0 0; text-align: center; font-size: .875rem; color: var(--d-muted); }
+
+/* ---------- arch ---------- */
+.sheet {
+  background: var(--paper); color: var(--ink); border-radius: 4px; box-shadow: var(--paper-shadow);
+  display: flex; flex-direction: column;
+  position: sticky; top: 1rem; min-height: calc(100dvh - 7rem); max-height: calc(100dvh - 2rem);
+}
+@media (max-width: 900px) { .sheet { position: static; min-height: 22rem; max-height: none; } }
+.sheet-head {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .75rem 1.5rem;
+  padding: 1.75rem 2.75rem 1.25rem;
+}
+.sheet-head > div:first-child { flex: 1 1 16rem; min-width: 0; }
+.sheet-head h2 { margin: 0; font-size: 1.3125rem; line-height: 1.2; }
+.sheet-meta { margin: .3rem 0 0; color: var(--ink-muted); font-size: .875rem; max-width: 40rem; overflow-wrap: anywhere; }
+.sheet-actions { display: flex; gap: .5rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .85rem; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--rule); background: transparent; color: var(--ink); font-weight: 700; font-size: .9375rem;
+}
+.btn:hover:not(:disabled) { border-color: var(--ink-muted); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-ink { background: var(--btn-ink-bg); border-color: var(--btn-ink-bg); color: var(--btn-ink-fg); }
+.btn-ink:hover:not(:disabled) { border-color: var(--btn-ink-bg); opacity: .9; }
+.btn .i { width: 1rem; height: 1rem; flex: none; }
+.sheet-body { flex: 1; overflow-y: auto; padding: .5rem 2.75rem 2.75rem; }
+.sheet-foot { margin: 0; padding: .9rem 2.75rem 1.1rem; border-top: 1px solid var(--rule); color: var(--ink-muted); font-size: .875rem; }
+@media (max-width: 640px) {
+  .sheet-head { padding: 1.25rem 1.25rem 1rem; }
+  .sheet-body { padding: .25rem 1.25rem 1.75rem; }
+  .sheet-foot { padding: .8rem 1.25rem 1rem; }
 }
 
-.empty { margin: auto; max-width: 22rem; text-align: center; color: var(--muted); padding: 2rem 0; }
-.empty svg { width: 2.25rem; height: 2.25rem; color: var(--line-strong); margin-bottom: .5rem; }
-.empty p { margin: 0; }
-.empty strong { display: block; color: var(--ink); margin-bottom: .25rem; }
-
-.transcript {
-  font-family: var(--read); font-size: 1.08rem; line-height: 1.7; max-width: 68ch;
-  white-space: pre-wrap; overflow-wrap: anywhere; max-height: 70vh; overflow-y: auto;
+.note { font-family: var(--read); font-style: italic; font-size: 1.125rem; line-height: 1.7; color: var(--ink-muted); max-width: 34rem; margin: .5rem 0 0; }
+.transcript { font-family: var(--read); font-size: 1.125rem; line-height: 1.75; max-width: 46rem; }
+.transcript p { margin: 0 0 1.1em; max-width: 66ch; overflow-wrap: anywhere; }
+.turn { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1.25rem; margin-bottom: 1.1em; }
+.turn p { margin: 0; }
+.turn .who {
+  font-family: var(--ui); font-size: .875rem; font-weight: 700; color: var(--ink-muted);
+  padding-top: .3rem; text-align: right;
 }
-@media (max-width: 860px) { .transcript { max-height: none; } }
-
-.progress { display: grid; gap: 1.25rem; max-width: 26rem; }
-.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
-.step { display: grid; grid-template-columns: 1.5rem 1fr; gap: .75rem; align-items: start; color: var(--muted); }
-.step strong { display: block; font-weight: 700; color: inherit; }
-.step .detail { font-size: .875rem; font-variant-numeric: tabular-nums; }
-.dot {
-  width: 1.5rem; height: 1.5rem; border-radius: 50%; display: grid; place-items: center;
-  border: 2px solid var(--line-strong); color: var(--surface);
+.turn + .turn .who.same { visibility: hidden; }
+@media (max-width: 640px) {
+  .turn { grid-template-columns: 1fr; gap: .1rem; }
+  .turn .who { text-align: left; padding-top: 0; }
+  .turn + .turn .who.same { display: none; }
 }
-.dot svg { width: .9rem; height: .9rem; }
-.step.active { color: var(--ink); }
-.step.active .dot { border-color: var(--accent); }
-.step.active .dot::after { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
-.step.done .dot { background: var(--ok); border-color: var(--ok); }
-@keyframes pulse { 50% { transform: scale(.55); opacity: .5; } }
-.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: .5rem; }
-.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
-.error-view { display: grid; gap: 1rem; justify-items: start; max-width: 34rem; }
+.fail { max-width: 34rem; display: grid; gap: .6rem; justify-items: start; padding-top: .5rem; }
+.fail h3 { margin: 0; font-size: 1.125rem; color: var(--fail); }
+.fail p { margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
-  .spinner { animation-duration: 2s; }
-  .step.active .dot::after { animation: none; }
+  .spinner { animation-duration: 2.4s; }
 }
 </style>
 </head>
 <body>
 
 <main class="gate" id="gate">
-  <div class="card gate-card">
-    <span class="brand-mark lg" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
-    </span>
-    <h1>Přepis zvuku</h1>
+  <div class="gate-card">
+    <div class="mark"><span class="lamp" aria-hidden="true"></span><span class="wordmark">Přepis</span></div>
 
     <div class="gate-state" id="gate-checking" role="status">
       <span class="spinner" aria-hidden="true"></span> Ověřuji přihlášení…
     </div>
 
     <div class="gate-panel" id="gate-login" hidden>
-      <p>Převede nahrávku z mikrofonu nebo ze souboru na text. Přihlaste se účtem Google, který má povolený přístup.</p>
-      <div class="alert" id="gate-err" role="alert" hidden></div>
+      <p class="gate-lead">Nahrávky a diktáty převedené na text. Přihlaste se účtem Google, který má povolený přístup.</p>
+      <p class="d-alert" id="gate-err" role="alert" hidden></p>
       <button class="google-btn" id="google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Přihlásit se přes Google
@@ -329,92 +322,67 @@ textarea { resize: vertical; min-height: 5.5rem; }
     </div>
 
     <div class="gate-panel" id="gate-denied" hidden>
-      <div class="alert" role="alert"><strong>Tento účet nemá přístup</strong><p id="denied-msg"></p></div>
-      <button class="btn" id="switch" type="button">Přihlásit se jiným účtem</button>
+      <div class="d-alert" role="alert"><strong>Tento účet nemá přístup</strong><p id="denied-msg"></p></div>
+      <button class="google-btn" id="switch" type="button">Přihlásit se jiným účtem</button>
     </div>
 
     <p class="gate-foot">Soukromá aplikace. Přístup mají jen povolené e&#8209;mailové adresy.</p>
-    <noscript><p class="alert">Aplikace potřebuje zapnutý JavaScript.</p></noscript>
+    <noscript><p class="d-alert">Aplikace potřebuje zapnutý JavaScript.</p></noscript>
   </div>
 </main>
 
-<div class="wrap" id="app" hidden>
+<div class="app" id="app" hidden>
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
-      </span>
-      <h1>Přepis zvuku</h1>
-    </div>
+    <div class="mark"><span class="lamp" id="lamp" aria-hidden="true"></span><h1 class="wordmark" style="margin:0">Přepis</h1></div>
     <div class="account">
       <span class="email" id="who"></span>
-      <button class="btn btn-ghost" id="logout" type="button">Odhlásit</button>
+      <button class="link" id="logout" type="button">Odhlásit</button>
     </div>
   </header>
 
-  <div class="grid">
-    <section class="card form" aria-label="Zadání přepisu">
-
-      <div class="section">
-        <h2 class="section-head"><span class="num" aria-hidden="true">1</span>Zvuk</h2>
-        <div class="seg" role="radiogroup" aria-label="Zdroj zvuku">
-          <input type="radio" name="src" id="src-rec" value="rec" checked>
-          <label for="src-rec">
-            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
-            Mikrofon
-          </label>
-          <input type="radio" name="src" id="src-file" value="file">
-          <label for="src-file">
-            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
-            Soubor
-          </label>
-        </div>
-
-        <div id="pane-rec">
-          <div class="recorder" id="recorder">
-            <button class="rec-btn" id="rec" type="button" aria-pressed="false" aria-label="Spustit nahrávání">
-              <canvas id="level" width="220" height="220" aria-hidden="true"></canvas>
-            </button>
-            <div>
-              <div class="rec-time" id="rec-time">0:00</div>
-              <div class="rec-state" id="rec-state">Stiskněte tlačítko a začněte mluvit.</div>
-            </div>
-          </div>
-        </div>
-
-        <div id="pane-file" hidden>
-          <label class="file-drop" id="drop">
-            <input type="file" id="file" accept="audio/*,video/*">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-            <span><strong>Vyberte soubor</strong> nebo ho sem přetáhněte</span>
-            <span class="hint">Zvuk i video, nejvýš 150 MB</span>
-          </label>
-        </div>
-
-        <div class="alert src-err" id="src-err" role="alert" hidden></div>
-
-        <div class="picked" id="picked" hidden>
-          <div class="picked-head">
-            <div class="picked-info">
-              <strong id="picked-name"></strong>
-              <span id="picked-meta"></span>
-            </div>
-            <button class="btn btn-ghost" id="clear" type="button">Odebrat</button>
-          </div>
-          <audio id="preview" controls preload="metadata"></audio>
-        </div>
+  <div class="desk">
+    <section class="device" id="device" aria-label="Nahrávání a nastavení">
+      <div class="seg" role="radiogroup" aria-label="Zdroj zvuku">
+        <input type="radio" name="src" id="src-rec" value="rec" checked><label for="src-rec">Mikrofon</label>
+        <input type="radio" name="src" id="src-file" value="file"><label for="src-file">Soubor</label>
       </div>
 
-      <div class="section">
-        <h2 class="section-head"><span class="num" aria-hidden="true">2</span>Služba a jazyk</h2>
-        <div class="choices" role="radiogroup" aria-label="Přepisová služba">
-          <input type="radio" name="provider" id="p-soniox" value="soniox" checked>
-          <label for="p-soniox"><strong>Soniox</strong><span>Využije kontext i odborné výrazy</span></label>
-          <input type="radio" name="provider" id="p-eleven" value="elevenlabs">
-          <label for="p-eleven"><strong>ElevenLabs Scribe</strong><span>Využije jen odborné výrazy</span></label>
+      <div class="deck">
+        <div class="rec-row" id="pane-rec">
+          <button class="rec-btn" id="rec" type="button" aria-pressed="false" aria-label="Spustit nahrávání"></button>
+          <div>
+            <div class="clock" id="clock" aria-hidden="true">0:00</div>
+            <div class="clock-sub" id="clock-sub">Délka nahrávky</div>
+          </div>
         </div>
-        <div class="field" style="margin-top:1rem">
-          <label class="label" for="lang" style="margin-bottom:.4rem">Jazyk nahrávky</label>
+
+        <label class="drop" id="pane-file" hidden>
+          <input type="file" id="file" accept="audio/*,video/*">
+          <strong>Vyberte soubor nebo ho sem přetáhněte</strong>
+          <span>Zvuk i video do 150 MB</span>
+        </label>
+
+        <canvas class="tape" id="tape" aria-hidden="true"></canvas>
+        <div class="readout">
+          <span id="status">Stiskněte tlačítko nahrávání a mluvte.</span>
+          <button class="link" id="clear" type="button" hidden>Odebrat</button>
+        </div>
+        <audio id="preview" controls preload="metadata" hidden></audio>
+        <p class="d-alert" id="src-err" role="alert" hidden></p>
+      </div>
+
+      <div class="settings">
+        <div class="row">
+          <span class="row-label" id="l-provider">Služba</span>
+          <div class="seg" role="radiogroup" aria-labelledby="l-provider">
+            <input type="radio" name="provider" id="p-soniox" value="soniox" checked><label for="p-soniox">Soniox</label>
+            <input type="radio" name="provider" id="p-eleven" value="elevenlabs"><label for="p-eleven">ElevenLabs</label>
+          </div>
+        </div>
+        <p class="row-hint" id="prov-hint">Využije kontext i odborné výrazy.</p>
+
+        <div class="row">
+          <label class="row-label" for="lang">Jazyk</label>
           <select id="lang">
             <option value="cs" selected>Čeština</option>
             <option value="sk">Slovenština</option>
@@ -423,68 +391,66 @@ textarea { resize: vertical; min-height: 5.5rem; }
             <option value="auto">Rozpoznat automaticky</option>
           </select>
         </div>
-      </div>
 
-      <div class="section">
-        <h2 class="section-head"><span class="num" aria-hidden="true">3</span>Upřesnění <span class="opt">(nepovinné)</span></h2>
-        <div class="field" id="ctx-field">
-          <div class="field-head">
-            <label class="label" for="context">Kontext</label>
-            <span class="count" id="ctx-count" aria-hidden="true">0 / 8 000</span>
-          </div>
-          <textarea id="context" rows="4" maxlength="8000" aria-describedby="ctx-hint" placeholder="O čem nahrávka je, kdo v ní mluví, jaká jména a zkratky zazní…"></textarea>
-          <p class="hint" id="ctx-hint">Pomůže správně zachytit téma, jména a zkratky.</p>
-        </div>
-        <div class="field">
-          <div class="field-head">
-            <label class="label" for="terms">Odborné výrazy a jména</label>
-            <span class="count" id="terms-count" aria-hidden="true">0 / 100</span>
-          </div>
-          <textarea id="terms" rows="3" aria-describedby="terms-hint" placeholder="Každý výraz na nový řádek, např.&#10;NIS Chameleon&#10;chemostacionář"></textarea>
-          <p class="hint" id="terms-hint">Služba je pak napíše správně. Nejvýš 100 výrazů, každý do 50 znaků.</p>
-        </div>
-        <div class="field">
+        <div class="row">
+          <span class="row-label">Mluvčí</span>
           <label class="switch">
             <input type="checkbox" id="diarize" role="switch">
             <span class="track" aria-hidden="true"></span>
-            <span><strong>Rozlišit mluvčí</strong><p class="hint">Přepis označí, kdo kdy mluví: Mluvčí 1, Mluvčí 2…</p></span>
+            <span>Rozlišit, kdo mluví</span>
           </label>
         </div>
+
+        <details class="more" id="more">
+          <summary>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            Kontext a odborné výrazy
+            <span class="more-count" id="more-count">nevyplněno</span>
+          </summary>
+          <div class="field" id="ctx-field">
+            <div class="field-head">
+              <label for="context">Kontext</label>
+              <span class="count" id="ctx-count" aria-hidden="true">0 / 8 000</span>
+            </div>
+            <textarea id="context" rows="4" maxlength="8000" aria-describedby="ctx-hint" placeholder="O čem nahrávka je, kdo v ní mluví, jaká jména a zkratky zazní"></textarea>
+            <p class="field-hint" id="ctx-hint">Pomůže správně zachytit téma, jména a zkratky.</p>
+          </div>
+          <div class="field">
+            <div class="field-head">
+              <label for="terms">Odborné výrazy a jména</label>
+              <span class="count" id="terms-count" aria-hidden="true">0 / 100</span>
+            </div>
+            <textarea id="terms" rows="3" aria-describedby="terms-hint" placeholder="Každý výraz na nový řádek, např.&#10;NIS Chameleon&#10;chemostacionář"></textarea>
+            <p class="field-hint" id="terms-hint">Služba je pak napíše přesně takhle. Nejvýš 100 výrazů po 50 znacích.</p>
+          </div>
+        </details>
       </div>
 
-      <div class="submit">
-        <button class="primary" id="go" type="button" disabled>
-          <span class="spinner" id="go-spin" aria-hidden="true" hidden></span>
-          <span id="go-label">Spustit přepis</span>
-        </button>
-        <p class="hint" id="go-hint">Nejdřív nahrajte zvuk nebo vyberte soubor.</p>
-      </div>
+      <button class="go" id="go" type="button" disabled><span id="go-label">Přepsat</span></button>
+      <p class="go-hint" id="go-hint">Nejdřív nahrajte hlas nebo vyberte soubor.</p>
     </section>
 
-    <section class="card result" id="result" aria-labelledby="result-title">
-      <div class="result-head">
-        <h2 id="result-title">Přepis</h2>
-        <div class="actions">
+    <section class="sheet" id="result" aria-labelledby="sheet-title">
+      <header class="sheet-head">
+        <div>
+          <h2 id="sheet-title">Přepis</h2>
+          <p class="sheet-meta" id="sheet-meta">Prázdný arch</p>
+        </div>
+        <div class="sheet-actions">
           <button class="btn" id="download" type="button" disabled>
-            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
             <span>Stáhnout .txt</span>
           </button>
-          <button class="btn btn-solid" id="copy" type="button" disabled>
+          <button class="btn btn-ink" id="copy" type="button" disabled>
             <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
-            <span>Kopírovat</span>
+            <span>Kopírovat text</span>
           </button>
         </div>
+      </header>
+      <div class="sheet-body" id="out">
+        <p class="note">Nahrajte hlas nebo vyberte soubor a stiskněte Přepsat. Text se napíše sem.</p>
       </div>
-      <div class="result-body" id="out">
-        <div class="empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
-          <p><strong>Zatím tu nic není</strong>Nahrajte zvuk nebo vyberte soubor a spusťte přepis. Text se zobrazí tady.</p>
-        </div>
-      </div>
-      <div class="result-foot" id="meta" hidden>
-        <span id="meta-text"></span>
-        <span>Přepis se na serveru neukládá. Zkopírujte si ho nebo stáhněte.</span>
-      </div>
+      <p class="sheet-foot" id="sheet-foot" hidden>Přepis se na serveru neukládá. Než stránku zavřete, zkopírujte si ho nebo stáhněte.</p>
     </section>
   </div>
 </div>
@@ -498,14 +464,14 @@ try { auth = await import("/identity.js"); } catch {}
 
 const $ = (id) => document.getElementById(id);
 const MAX_BYTES = 150 * 1024 * 1024;
+const WAVE_MAX_BYTES = 25 * 1024 * 1024;   // větší soubory nedekódujeme, stopa by stála moc paměti
 const MAX_TERMS = 100;
-const PROVIDERS = { soniox: "Soniox", elevenlabs: "ElevenLabs Scribe" };
-const STEPS = [["upload", "Nahrání zvuku na server"], ["start", "Předání přepisové službě"], ["wait", "Přepis"]];
-const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+const PROVIDERS = { soniox: "Soniox", elevenlabs: "ElevenLabs" };
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const narrow = () => matchMedia("(max-width: 900px)").matches;
 
 let audio = null;            // { blob, name, url, secs }
-let recorder = null, stream = null, chunks = [], t0 = 0, timer = null, raf = null, actx = null;
+let recorder = null, stream = null, chunks = [], t0 = 0, clockTimer = null, levelRaf = null, actx = null;
 let busy = false, allowed = false;
 let transcript = "", saved = true, lastName = "";
 
@@ -515,6 +481,8 @@ const mb = (b) => `${(b / 1024 / 1024).toLocaleString("cs-CZ", { maximumFraction
 const plural = (n, one, few, many) => (n === 1 ? one : n >= 2 && n <= 4 ? few : many);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const announce = (msg) => { $("announce").textContent = msg; };
+const setStatus = (msg) => { $("status").textContent = msg; };
+const setLamp = (on) => $("lamp").classList.toggle("on", on);
 function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -524,6 +492,105 @@ function el(tag, cls, text) {
 function stamp() {
   const d = new Date(), p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+// ---------- páska: stopa hlasu, průběh nahrávání a čtecí hlava ----------
+// mode: idle | live (právě se nahrává) | clip (hotová stopa) | progress (nahrávání na server) | scan (služba přepisuje)
+const tape = { canvas: $("tape"), peaks: [], mode: "idle", progress: 0, scan: 0, raf: 0, colors: null };
+
+function tapeColors() {
+  const cs = getComputedStyle(tape.canvas);
+  return { on: cs.getPropertyValue("--tape-on").trim(), off: cs.getPropertyValue("--tape-off").trim(), lamp: getComputedStyle(document.documentElement).getPropertyValue("--lamp").trim() };
+}
+function sizeTape() {
+  const c = tape.canvas, r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  c.width = Math.round(r.width * dpr);
+  c.height = Math.round(r.height * dpr);
+  tape.colors = tapeColors();
+  drawTape();
+}
+new ResizeObserver(sizeTape).observe(tape.canvas);
+
+// Zhustí nebo roztáhne stopu na n sloupců a znormalizuje ji, aby byl vidět i tichý záznam.
+function resample(peaks, n) {
+  if (!peaks.length || n <= 0) return [];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const a = Math.floor((i * peaks.length) / n), b = Math.max(a + 1, Math.floor(((i + 1) * peaks.length) / n));
+    let m = 0;
+    for (let j = a; j < b; j++) m = Math.max(m, peaks[j]);
+    out.push(m);
+  }
+  const top = Math.max(...out) || 1;
+  return out.map((v) => v / top);
+}
+
+function drawTape() {
+  const c = tape.canvas, g = c.getContext("2d"), dpr = devicePixelRatio || 1;
+  const W = c.width, H = c.height;
+  if (!W || !H || !tape.colors) return;
+  const { on, off, lamp } = tape.colors;
+  g.clearRect(0, 0, W, H);
+  const bar = 3 * dpr, step = 5 * dpr, n = Math.floor(W / step), mid = H / 2, room = H - 6 * dpr;
+
+  g.fillStyle = off;
+  g.fillRect(0, mid - dpr / 2, W, dpr);   // osa pásky
+
+  const live = tape.mode === "live";
+  const vals = live ? tape.peaks.slice(-n) : resample(tape.peaks, n);
+  const offset = live ? n - vals.length : 0;
+  const head = tape.scan * W;
+
+  vals.forEach((v, i) => {
+    const x = (offset + i) * step;
+    const h = Math.max(2 * dpr, v * room);
+    let color = on, alpha = 1;
+    if (live) color = lamp;
+    else if (tape.mode === "progress") color = (i + 1) / n <= tape.progress ? on : off;
+    else if (tape.mode === "scan") alpha = reduceMotion ? .7 : Math.abs(x - head) < W * .06 ? 1 : .4;
+    g.globalAlpha = alpha;
+    g.fillStyle = color;
+    g.fillRect(x, mid - h / 2, bar, h);
+  });
+  g.globalAlpha = 1;
+
+  // Bez stopy (velký soubor) ukazujeme průběh aspoň jako plnou čáru po ose.
+  if (!vals.length && tape.mode === "progress") {
+    g.fillStyle = on;
+    g.fillRect(0, mid - 1.5 * dpr, W * tape.progress, 3 * dpr);
+  }
+  if (tape.mode === "scan" && !reduceMotion) {
+    g.fillStyle = on;
+    g.fillRect(head, 0, 2 * dpr, H);
+  }
+}
+function startScan() {
+  tape.mode = "scan";
+  if (reduceMotion) { drawTape(); return; }
+  const start = performance.now();
+  const loop = (now) => {
+    tape.scan = ((now - start) % 2600) / 2600;
+    drawTape();
+    tape.raf = requestAnimationFrame(loop);
+  };
+  tape.raf = requestAnimationFrame(loop);
+}
+function stopScan() { cancelAnimationFrame(tape.raf); }
+
+async function filePeaks(file) {
+  if (file.size > WAVE_MAX_BYTES || !window.OfflineAudioContext) return null;
+  try {
+    const decoded = await new OfflineAudioContext(1, 1, 8000).decodeAudioData(await file.arrayBuffer());
+    const data = decoded.getChannelData(0), n = 800, size = Math.max(1, Math.floor(data.length / n)), out = [];
+    for (let i = 0; i < n; i++) {
+      let m = 0;
+      for (let j = i * size, end = Math.min((i + 1) * size, data.length); j < end; j += 4) m = Math.max(m, Math.abs(data[j]));
+      out.push(m);
+    }
+    return out;
+  } catch {
+    return null;
+  }
 }
 
 // ---------- přihlášení (Netlify Identity + Google) ----------
@@ -573,7 +640,6 @@ async function initAuth() {
   const user = await auth.getUser();
   if (!user) { gate("login"); return; }
   $("who").textContent = user.email || "";
-  $("who").title = user.email || "";
   $("logout").title = user.email ? `Odhlásit ${user.email}` : "";
   try {
     await api("/api/me");
@@ -601,11 +667,22 @@ async function api(path, opts = {}) {
 }
 
 // ---------- zdroj zvuku ----------
+function idleStatus() {
+  if (audio) {
+    const len = Number.isFinite(audio.secs) && audio.secs > 0 ? `, ${fmt(audio.secs)}` : "";
+    setStatus(`${audio.name}, ${mb(audio.blob.size)}${len}`);
+  } else {
+    setStatus($("src-file").checked ? "Zatím není vybraný žádný soubor." : "Stiskněte tlačítko nahrávání a mluvte.");
+  }
+  $("clear").hidden = !audio || busy;
+}
+
 document.querySelectorAll('input[name="src"]').forEach((r) => r.addEventListener("change", () => {
   const file = $("src-file").checked;
   $("pane-file").hidden = !file;
   $("pane-rec").hidden = file;
   $("src-err").hidden = true;
+  idleStatus();
 }));
 
 function showSrcErr(msg) {
@@ -613,50 +690,50 @@ function showSrcErr(msg) {
   $("src-err").hidden = false;
 }
 
-function setAudio(blob, name, secs) {
+function setAudio(blob, name, secs, peaks) {
   $("src-err").hidden = true;
-  if (!blob.size) { showSrcErr("Soubor je prázdný."); return; }
-  if (blob.size > MAX_BYTES) { showSrcErr(`Soubor má ${mb(blob.size)}. Nahrát lze nejvýš 150 MB.`); return; }
+  if (!blob.size) { showSrcErr("Soubor je prázdný. Vyberte jiný."); return false; }
+  if (blob.size > MAX_BYTES) { showSrcErr(`Soubor má ${mb(blob.size)}. Nahrát lze nejvýš 150 MB.`); return false; }
   if (audio) URL.revokeObjectURL(audio.url);
   audio = { blob, name, url: URL.createObjectURL(blob), secs };
   $("preview").src = audio.url;
-  $("picked-name").textContent = name;
-  $("picked-name").title = name;
-  showPickedMeta();
-  $("picked").hidden = false;
+  $("preview").hidden = false;
+  tape.peaks = peaks || [];
+  tape.mode = "clip";
+  drawTape();
+  idleStatus();
   updateGo();
-}
-function showPickedMeta() {
-  const parts = [mb(audio.blob.size)];
-  if (Number.isFinite(audio.secs) && audio.secs > 0) parts.push(fmt(audio.secs));
-  $("picked-meta").textContent = parts.join(" · ");
+  return true;
 }
 $("preview").addEventListener("loadedmetadata", () => {
   const d = $("preview").duration;
-  if (audio && Number.isFinite(d) && d > 0) { audio.secs = d; showPickedMeta(); }
+  if (audio && !busy && Number.isFinite(d) && d > 0) { audio.secs = d; idleStatus(); }
 });
 $("clear").addEventListener("click", () => {
   if (audio) URL.revokeObjectURL(audio.url);
   audio = null;
   $("preview").removeAttribute("src");
-  $("preview").load();
-  $("picked").hidden = true;
+  $("preview").hidden = true;
   $("file").value = "";
+  $("clock").textContent = "0:00";
+  tape.peaks = [];
+  tape.mode = "idle";
+  drawTape();
+  idleStatus();
   updateGo();
 });
 
 // ---------- soubor ----------
-$("file").addEventListener("change", (e) => {
-  const f = e.target.files[0];
-  if (f) setAudio(f, f.name);
-});
-const drop = $("drop");
+async function pickFile(f) {
+  if (!setAudio(f, f.name)) return;
+  const peaks = await filePeaks(f);
+  if (peaks && audio?.blob === f && !busy) { tape.peaks = peaks; drawTape(); }
+}
+$("file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) pickFile(f); });
+const drop = $("pane-file");
 ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", (e) => {
-  const f = e.dataTransfer.files[0];
-  if (f) setAudio(f, f.name);
-});
+drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f && !busy) pickFile(f); });
 
 // ---------- nahrávání ----------
 function pickMime() {
@@ -666,6 +743,7 @@ function pickMime() {
 
 $("rec").addEventListener("click", async () => {
   if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+  if (busy) return;
   $("src-err").hidden = true;
   if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) {
     showSrcErr("Tento prohlížeč neumí nahrávat zvuk. Vyberte místo toho soubor.");
@@ -682,60 +760,57 @@ $("rec").addEventListener("click", async () => {
   chunks = [];
   recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   recorder.onstop = () => {
-    clearInterval(timer); cancelAnimationFrame(raf);
+    clearInterval(clockTimer); cancelAnimationFrame(levelRaf);
     stream.getTracks().forEach((t) => t.stop());
     if (actx) actx.close();
-    clearLevel();
-    $("recorder").classList.remove("recording");
+    $("device").classList.remove("recording");
     $("rec").setAttribute("aria-pressed", "false");
     $("rec").setAttribute("aria-label", "Spustit nové nahrávání");
+    $("clock-sub").textContent = "Délka nahrávky";
+    setLamp(false);
     const type = recorder.mimeType || "audio/webm";
     const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
     const secs = (Date.now() - t0) / 1000;
-    $("rec-state").textContent = "Nahráno. Dalším stisknutím nahrávku nahradíte.";
-    setAudio(new Blob(chunks, { type }), `nahravka-${stamp()}.${ext}`, secs);
+    $("clock").textContent = fmt(secs);
+    setAudio(new Blob(chunks, { type }), `nahravka-${stamp()}.${ext}`, secs, tape.peaks.slice());
     announce(`Nahrávání ukončeno, délka ${fmt(secs)}.`);
   };
   recorder.start(1000);
   t0 = Date.now();
-  $("rec-time").textContent = "0:00";
-  $("recorder").classList.add("recording");
+  tape.peaks = [];
+  tape.mode = "live";
+  $("clock").textContent = "0:00";
+  $("clock-sub").textContent = "Nahrává se";
+  $("device").classList.add("recording");
   $("rec").setAttribute("aria-pressed", "true");
   $("rec").setAttribute("aria-label", "Zastavit nahrávání");
-  $("rec-state").textContent = "Nahrává se. Dalším stisknutím nahrávání ukončíte.";
+  $("clear").hidden = true;
+  setStatus("Dalším stisknutím nahrávání ukončíte.");
+  setLamp(true);
+  updateGo();
   announce("Nahrávání spuštěno.");
-  timer = setInterval(() => { $("rec-time").textContent = fmt((Date.now() - t0) / 1000); }, 250);
-  drawLevel(stream);
+  clockTimer = setInterval(() => { $("clock").textContent = fmt((Date.now() - t0) / 1000); }, 250);
+  listen(stream);
 });
 
-// kruhový ukazatel hlasitosti kolem tlačítka
-function drawLevel(s) {
+// Hlasitost z mikrofonu: každých ~70 ms jeden sloupec na pásku.
+function listen(s) {
   actx = new AudioContext();
   const an = actx.createAnalyser();
-  an.fftSize = 512;
+  an.fftSize = 1024;
   actx.createMediaStreamSource(s).connect(an);
   const buf = new Uint8Array(an.fftSize);
-  const c = $("level"), g = c.getContext("2d");
-  const red = getComputedStyle(document.documentElement).getPropertyValue("--rec").trim();
-  let smooth = 0;
-  const tick = () => {
+  let peak = 0, last = performance.now();
+  const tick = (now) => {
     an.getByteTimeDomainData(buf);
     let sum = 0;
     for (const v of buf) sum += ((v - 128) / 128) ** 2;
-    smooth = Math.max(Math.sqrt(sum / buf.length) * 3, smooth * 0.9);
-    const lvl = Math.min(1, smooth);
-    g.clearRect(0, 0, c.width, c.height);
-    g.strokeStyle = red;
-    g.lineWidth = 6;
-    g.globalAlpha = 0.25 + lvl * 0.75;
-    g.beginPath();
-    g.arc(c.width / 2, c.height / 2, 60 + lvl * 34, 0, Math.PI * 2);
-    g.stroke();
-    raf = requestAnimationFrame(tick);
+    peak = Math.max(peak, Math.min(1, Math.sqrt(sum / buf.length) * 4));
+    if (now - last >= 70) { tape.peaks.push(peak); peak = 0; last = now; drawTape(); }
+    levelRaf = requestAnimationFrame(tick);
   };
-  tick();
+  levelRaf = requestAnimationFrame(tick);
 }
-function clearLevel() { const c = $("level"); c.getContext("2d").clearRect(0, 0, c.width, c.height); }
 
 // ---------- volby ----------
 function provider() { return document.querySelector('input[name="provider"]:checked').value; }
@@ -743,101 +818,103 @@ function syncProvider() {
   const eleven = provider() === "elevenlabs";
   $("context").disabled = eleven;
   $("ctx-field").classList.toggle("off", eleven);
-  $("ctx-hint").textContent = eleven
-    ? "ElevenLabs kontext nepoužívá. Využije jen odborné výrazy níže."
-    : "Pomůže správně zachytit téma, jména a zkratky.";
+  $("prov-hint").textContent = eleven ? "Využije jen odborné výrazy, kontext přeskočí." : "Využije kontext i odborné výrazy.";
+  $("ctx-hint").textContent = eleven ? "ElevenLabs kontext nepoužívá." : "Pomůže správně zachytit téma, jména a zkratky.";
 }
 document.querySelectorAll('input[name="provider"]').forEach((r) => r.addEventListener("change", syncProvider));
 syncProvider();
 
 function parseTerms() { return $("terms").value.split(/\r?\n|,/).map((t) => t.trim()).filter(Boolean); }
 function syncCounts() {
-  $("ctx-count").textContent = `${num($("context").value.length)} / ${num(8000)}`;
-  const n = parseTerms().length;
+  const ctx = $("context").value.length, n = parseTerms().length;
+  $("ctx-count").textContent = `${num(ctx)} / ${num(8000)}`;
   $("terms-count").textContent = `${n} / ${MAX_TERMS}`;
   $("terms-count").classList.toggle("over", n > MAX_TERMS);
+  const parts = [];
+  if (ctx) parts.push("kontext");
+  if (n) parts.push(`${n} ${plural(n, "výraz", "výrazy", "výrazů")}`);
+  $("more-count").textContent = parts.length ? parts.join(" a ") : "nevyplněno";
 }
 $("context").addEventListener("input", syncCounts);
 $("terms").addEventListener("input", syncCounts);
 syncCounts();
 
+// Rozbalení kontextu si pamatujeme jen v tomto prohlížeči.
+try { $("more").open = localStorage.getItem("prepis-kontext") === "1"; } catch {}
+$("more").addEventListener("toggle", () => {
+  try { localStorage.setItem("prepis-kontext", $("more").open ? "1" : "0"); } catch {}
+});
+
 function updateGo() {
-  $("go").disabled = busy || !audio;
-  $("go-label").textContent = busy ? "Přepisuje se…" : "Spustit přepis";
-  $("go-spin").hidden = !busy;
+  const recording = recorder?.state === "recording";
+  $("go").disabled = busy || !audio || recording;
+  $("go").classList.toggle("working", busy);
+  if (!busy) $("go-label").textContent = "Přepsat";
   $("go-hint").hidden = busy || !!audio;
-  $("clear").disabled = busy;
+  $("rec").disabled = busy;
+  $("file").disabled = busy;
+  $("clear").hidden = !audio || busy || recording;
+  document.querySelectorAll('input[name="src"]').forEach((r) => { r.disabled = busy || recording; });
+}
+// Stav ukazujeme u pásky i přímo na tlačítku, kam se uživatel právě dívá.
+function working(status, short) {
+  setStatus(status);
+  $("go-label").textContent = short;
 }
 
-// ---------- výsledek ----------
+// ---------- arch ----------
 const out = $("out");
-let stage = "";
+function sheetNote(text) { out.replaceChildren(el("p", "note", text)); }
 
-function showProgress(next, detail, pct) {
-  if (next !== stage) announce(STEPS.find(([k]) => k === next)[1] + "…");
-  stage = next;
-  const idx = STEPS.findIndex(([k]) => k === next);
-  const list = el("ol", "steps");
-  STEPS.forEach(([, label], i) => {
-    const li = el("li", `step${i < idx ? " done" : i === idx ? " active" : ""}`);
-    const dot = el("span", "dot");
-    if (i < idx) dot.innerHTML = CHECK;
-    const body = el("div");
-    body.append(el("strong", null, label));
-    if (i === idx && detail) body.append(el("span", "detail", detail));
-    if (i === idx && pct != null) {
-      const bar = el("div", "bar"), fill = el("span");
-      fill.style.width = `${pct}%`;
-      bar.append(fill);
-      body.append(bar);
-    }
-    li.append(dot, body);
-    list.append(li);
-  });
-  const wrap = el("div", "progress");
-  wrap.append(list, el("p", "hint", "Stránku nechte otevřenou, dokud se přepis nezobrazí."));
-  out.replaceChildren(wrap);
+// Odstavce „Mluvčí N: …“ sázíme jako protokol: jméno na okraji, text vedle.
+function renderTranscript(text) {
+  const wrap = el("div", "transcript");
+  let prev = null;
+  for (const para of text.split(/\n{2,}/)) {
+    const m = /^(Mluvčí \d+):\s*([\s\S]*)$/.exec(para.trim());
+    if (!m) { wrap.append(el("p", null, para.trim())); prev = null; continue; }
+    const turn = el("div", "turn");
+    const who = el("span", `who${m[1] === prev ? " same" : ""}`, m[1]);
+    turn.append(who, el("p", null, m[2]));
+    wrap.append(turn);
+    prev = m[1];
+  }
+  return wrap;
 }
 
 function showError(msg) {
-  stage = "";
-  const box = el("div", "alert");
-  box.append(el("strong", null, "Přepis se nepodařil"), el("p", null, msg));
-  const view = el("div", "error-view");
-  view.append(box);
+  const box = el("div", "fail");
+  box.append(el("h3", null, "Přepis se nepodařil"), el("p", null, msg));
   if (audio && allowed) {
     const retry = el("button", "btn", "Zkusit znovu");
     retry.type = "button";
     retry.addEventListener("click", () => $("go").click());
-    view.append(retry);
+    box.append(retry);
   }
-  out.replaceChildren(view);
+  out.replaceChildren(box);
+  setStatus("Přepis se nepodařil. Důvod je na archu.");
   announce(`Přepis se nepodařil. ${msg}`);
 }
 
 function showText(text, info) {
-  stage = "";
   transcript = text;
   saved = !text;
   $("copy").disabled = $("download").disabled = !text;
   if (!text) {
-    const empty = el("div", "empty");
-    empty.append(el("p", null, "Služba v nahrávce nenašla žádnou řeč."));
-    out.replaceChildren(empty);
-    $("meta").hidden = true;
+    sheetNote("Služba v nahrávce nenašla žádnou řeč. Zkontrolujte, že je slyšet, a zkuste to znovu.");
+    setStatus("Hotovo, ale bez textu.");
     announce("Hotovo. V nahrávce nebyla nalezena žádná řeč.");
     return;
   }
-  out.replaceChildren(el("div", "transcript", text));
+  out.replaceChildren(renderTranscript(text));
+  out.scrollTop = 0;
   const words = text.trim().split(/\s+/).length;
-  $("meta-text").textContent = [
-    `${num(words)} ${plural(words, "slovo", "slova", "slov")}`,
-    `${num(text.length)} ${plural(text.length, "znak", "znaky", "znaků")}`,
-    PROVIDERS[info.provider],
-    `za ${fmt(info.secs)}`,
-  ].join(" · ");
-  $("meta").hidden = false;
+  const count = `${num(words)} ${plural(words, "slovo", "slova", "slov")}`;
+  $("sheet-meta").textContent = `${info.name}. ${count}, přepsáno službou ${PROVIDERS[info.provider]} za ${fmt(info.secs)}.`;
+  $("sheet-foot").hidden = false;
+  setStatus(`Hotovo, ${count} na archu.`);
   announce("Přepis je hotový.");
+  if (narrow()) $("result").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 // ---------- přepis ----------
@@ -846,19 +923,24 @@ $("go").addEventListener("click", async () => {
   if (!allowed) { await initAuth(); if (!allowed) return; }
   if (transcript && !saved && !confirm("Současný přepis jste si nezkopírovali ani nestáhli. Nový přepis ho nahradí. Pokračovat?")) return;
 
-  const a = audio, p = provider();   // nahrávka a volby platné pro tento přepis
-  busy = true; updateGo();
+  const a = audio, p = provider(), name = PROVIDERS[p];   // nahrávka a volby platné pro tento přepis
+  busy = true;
+  setLamp(true);
+  updateGo();
   transcript = ""; saved = true; lastName = a.name;
   $("copy").disabled = $("download").disabled = true;
-  $("meta").hidden = true;
-  if (matchMedia("(max-width: 860px)").matches) {
-    $("result").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-  }
+  $("sheet-foot").hidden = true;
+  $("sheet-meta").textContent = a.name;
+  sheetNote(`Text se napíše sem, jakmile ho ${name} přepíše. Stránku nechte otevřenou.`);
 
   const started = Date.now();
   let ticker = null;
+  tape.mode = "progress";
+  tape.progress = 0;
+  drawTape();
   try {
-    showProgress("upload", "Připravuji…", 0);
+    working("Nahrávám na server…", "Nahrávám…");
+    announce("Nahrávám zvuk na server.");
     const job = await api("/api/jobs", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -875,35 +957,47 @@ $("go").addEventListener("click", async () => {
     });
 
     for (let i = 0; i < job.chunks; i++) {
-      showProgress("upload", `${mb(Math.min(i * job.chunkBytes, a.blob.size))} z ${mb(a.blob.size)}`, (i / job.chunks) * 100);
-      const part = a.blob.slice(i * job.chunkBytes, (i + 1) * job.chunkBytes);
+      const pct = Math.round((i / job.chunks) * 100);
+      tape.progress = i / job.chunks;
+      drawTape();
+      working(`Nahrávám na server, ${pct} %`, `Nahrávám ${pct} %`);
       await api(`/api/upload?job=${job.id}&index=${i}`, {
         method: "POST",
         headers: { "content-type": "application/octet-stream" },
-        body: part,
+        body: a.blob.slice(i * job.chunkBytes, (i + 1) * job.chunkBytes),
       });
     }
+    tape.progress = 1;
+    drawTape();
 
-    showProgress("start");
+    working(`Předávám nahrávku službě ${name}…`, "Předávám…");
+    announce(`Předávám nahrávku službě ${name}.`);
     await api(`/api/start?job=${job.id}`, { method: "POST" });
 
-    const elapsed = () => `Probíhá ${fmt((Date.now() - started) / 1000)}`;
-    showProgress("wait", elapsed());
-    ticker = setInterval(() => {
-      const d = out.querySelector(".step.active .detail");
-      if (d) d.textContent = elapsed();
-    }, 1000);
+    startScan();
+    announce(`${name} přepisuje.`);
+    const tick = () => {
+      const t = fmt((Date.now() - started) / 1000);
+      working(`${name} přepisuje, ${t}`, `Přepisuje se ${t}`);
+    };
+    tick();
+    ticker = setInterval(tick, 1000);
     while (true) {
       await sleep(3000);
       const st = await api(`/api/status?job=${job.id}`);
-      if (st.status === "completed") { showText(st.text, { provider: p, secs: (Date.now() - started) / 1000 }); break; }
+      if (st.status === "completed") { showText(st.text, { name: a.name, provider: p, secs: (Date.now() - started) / 1000 }); break; }
       if (st.status === "error") throw new Error(st.error || "Služba přepis nedokončila.");
     }
   } catch (e) {
     showError(e.message);
   } finally {
     clearInterval(ticker);
-    busy = false; updateGo();
+    stopScan();
+    busy = false;
+    setLamp(false);
+    tape.mode = audio ? "clip" : "idle";
+    drawTape();
+    updateGo();
   }
 });
 
@@ -912,8 +1006,7 @@ function flash(btn, text) {
   const label = btn.querySelector("span");
   const orig = label.textContent;
   label.textContent = text;
-  btn.classList.add("done");
-  setTimeout(() => { label.textContent = orig; btn.classList.remove("done"); }, 1800);
+  setTimeout(() => { label.textContent = orig; }, 1800);
 }
 
 $("copy").addEventListener("click", async () => {
@@ -928,7 +1021,7 @@ $("copy").addEventListener("click", async () => {
   }
   saved = true;
   flash($("copy"), "Zkopírováno");
-  announce("Přepis je ve schránce.");
+  announce("Text je ve schránce.");
 });
 
 $("download").addEventListener("click", () => {
@@ -951,6 +1044,8 @@ addEventListener("beforeunload", (e) => {
   }
 });
 
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", sizeTape);
+idleStatus();
 initAuth();
 </script>
 </body>
