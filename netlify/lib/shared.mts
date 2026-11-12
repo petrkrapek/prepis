@@ -34,8 +34,17 @@ export interface Job {
   createdAt: number;
 }
 
+// Úlohy a kousky nahrávek leží ve Frankfurtu (EU). Region je nutné předat
+// při každém otevření úložiště, jinak @netlify/blobs použije USA (us-east-2).
+export const BLOBS_REGION = "eu-central-1" as const;
+
 export function store() {
-  return getStore({ name: "prepisy", consistency: "strong" });
+  return getStore({ name: "prepisy", consistency: "strong", region: BLOBS_REGION });
+}
+
+/** Původní úložiště v USA. Používá ho jen úklid (cleanup.mts), aby v něm nic nezůstalo. */
+export function legacyStore() {
+  return getStore({ name: "prepisy", consistency: "strong", region: "us-east-2" });
 }
 
 export const jobKey = (id: string) => `job/${id}`;
@@ -105,6 +114,12 @@ export async function deleteAudio(job: Job): Promise<void> {
   );
 }
 
+/** Smaže úlohu se vším, co k ní u nás patří: záznam, kousky zvuku a výsledek z webhooku. */
+export async function deleteJob(job: Job): Promise<void> {
+  const s = store();
+  await Promise.allSettled([deleteAudio(job), s.delete(jobKey(job.id)), s.delete(resultKey(job.id))]);
+}
+
 // Region určuje, kde Soniox zpracuje a uloží zvuk i přepis. Klíč musí být
 // z projektu ve stejném regionu (EU projekt se zakládá v Soniox Console).
 const SONIOX_HOSTS: Record<string, string> = {
@@ -119,6 +134,24 @@ export function sonioxBase(): string {
   const host = SONIOX_HOSTS[region];
   if (!host) throw new Error(`Neznámá hodnota SONIOX_REGION „${region}“. Použijte us, eu, jp nebo in.`);
   return `${host}/v1`;
+}
+
+// Úlohy z doby před volbou regionu běžely v USA.
+export const sonioxApi = (job: Job) => job.sonioxBase ?? "https://api.soniox.com/v1";
+
+/**
+ * Smaže u Sonioxu přepis i nahraný soubor. Chyby ignoruje: Soniox data
+ * jinak smaže sám po 30 dnech a úklid se nesmí zaseknout na jedné úloze.
+ */
+export async function cleanupSoniox(job: Job): Promise<void> {
+  const key = Netlify.env.get("SONIOX_API_KEY");
+  if (!key || (!job.providerId && !job.sonioxFileId)) return;
+  const auth = { Authorization: `Bearer ${key}` };
+  const base = sonioxApi(job);
+  await Promise.allSettled([
+    job.providerId ? fetch(`${base}/transcriptions/${job.providerId}`, { method: "DELETE", headers: auth }) : null,
+    job.sonioxFileId ? fetch(`${base}/files/${job.sonioxFileId}`, { method: "DELETE", headers: auth }) : null,
+  ]);
 }
 
 export function env(name: string): string {

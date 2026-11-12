@@ -1,18 +1,17 @@
 import type { Config } from "@netlify/functions";
 import {
-  checkAuth, env, fail, jobKey, json, loadJob, resultKey, saveJob, store, validId, withSpeakers, type Job,
+  checkAuth, cleanupSoniox, deleteJob, env, fail, json, loadJob, resultKey, sonioxApi, store, validId, withSpeakers,
+  type Job,
 } from "../lib/shared.mts";
 import { buildSegments, segmentsText, type Segment, type SonioxToken } from "../lib/segments.mts";
 
 // Hotový přepis: prostý text na kopírování a u Sonioxu i repliky pro arch.
 type Result = { text: string; segments?: Segment[] };
-// Úlohy z doby před volbou regionu běžely v USA.
-const sonioxApi = (job: Job) => job.sonioxBase ?? "https://api.soniox.com/v1";
 
 const GIVE_UP_MS = 3 * 60 * 60 * 1000; // po 3 hodinách bez výsledku úlohu vzdáme
 
-// Vrací stav úlohy. Hotový přepis vydá jednou a pak úlohu smaže,
-// aby na serveru nezůstávaly texty přepisů.
+// Vrací stav úlohy. Hotový přepis i chybu vydá jednou a pak úlohu smaže,
+// aby na serveru nezůstávaly texty přepisů ani zadání.
 export default async (req: Request) => {
   const denied = await checkAuth();
   if (denied) return denied;
@@ -22,27 +21,19 @@ export default async (req: Request) => {
   const job = await loadJob(id);
   if (!job) return fail("Úloha neexistuje nebo už byla vyzvednuta.", 404);
 
-  if (job.status === "error") return json({ status: "error", error: job.error });
+  if (job.status === "error") return giveUp(job, job.error || "Přepis se nepodařil.");
   if (job.status === "uploading") return json({ status: "uploading" });
 
   try {
     const result = job.provider === "soniox" ? await pollSoniox(job) : await pollElevenLabs(job);
     if (result === null) {
-      if (Date.now() - job.createdAt > GIVE_UP_MS) {
-        job.status = "error";
-        job.error = "Služba nevrátila výsledek ani po 3 hodinách.";
-        await saveJob(job);
-        return json({ status: "error", error: job.error });
-      }
+      if (Date.now() - job.createdAt > GIVE_UP_MS) return giveUp(job, "Služba nevrátila výsledek ani po 3 hodinách.");
       return json({ status: "processing" });
     }
-    await store().delete(jobKey(job.id));
+    await deleteJob(job);
     return json({ status: "completed", ...result });
   } catch (e) {
-    job.status = "error";
-    job.error = e instanceof Error ? e.message : String(e);
-    await saveJob(job);
-    return json({ status: "error", error: job.error });
+    return giveUp(job, e instanceof Error ? e.message : String(e));
   }
 };
 
@@ -54,10 +45,7 @@ async function pollSoniox(job: Job): Promise<Result | null> {
   if (!st.ok) throw new Error(`Soniox: nelze zjistit stav (${st.status}).`);
   const info = (await st.json()) as { status: string; error_message?: string };
 
-  if (info.status === "error") {
-    await cleanupSoniox(job);
-    throw new Error(`Soniox: ${info.error_message || "přepis selhal."}`);
-  }
+  if (info.status === "error") throw new Error(`Soniox: ${info.error_message || "přepis selhal."}`); // uklidí giveUp
   if (info.status !== "completed") return null;
 
   const tr = await fetch(`${base}/transcriptions/${job.providerId}/transcript`, { headers: auth });
@@ -70,16 +58,11 @@ async function pollSoniox(job: Job): Promise<Result | null> {
   return { text: segmentsText(segments), segments };
 }
 
-// Soniox soubory ani přepisy sám nemaže, uklidíme je hned po stažení.
-async function cleanupSoniox(job: Job) {
-  const auth = { Authorization: `Bearer ${env("SONIOX_API_KEY")}` };
-  const base = sonioxApi(job);
-  await Promise.allSettled([
-    fetch(`${base}/transcriptions/${job.providerId}`, { method: "DELETE", headers: auth }),
-    job.sonioxFileId
-      ? fetch(`${base}/files/${job.sonioxFileId}`, { method: "DELETE", headers: auth })
-      : Promise.resolve(),
-  ]);
+// Úlohu vzdáme: uklidíme ji u služby i u nás a chybu vydáme prohlížeči.
+async function giveUp(job: Job, error: string): Promise<Response> {
+  if (job.provider === "soniox") await cleanupSoniox(job);
+  await deleteJob(job);
+  return json({ status: "error", error });
 }
 
 async function pollElevenLabs(job: Job): Promise<Result | null> {

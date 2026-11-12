@@ -1,6 +1,6 @@
 import type { Config } from "@netlify/functions";
 import {
-  checkAuth, chunkKey, deleteAudio, env, fail, json, loadJob, saveJob, sonioxBase, store, validId, type Job,
+  checkAuth, chunkKey, deleteAudio, deleteJob, env, fail, json, loadJob, saveJob, sonioxBase, store, validId, type Job,
 } from "../lib/shared.mts";
 
 // Poskládá nahrané kousky a předá audio zvolené službě. Nečeká na výsledek:
@@ -15,28 +15,34 @@ export default async (req: Request) => {
   if (!job) return fail("Úloha neexistuje.", 404);
   if (job.status !== "uploading") return fail("Přepis už byl spuštěn.", 409);
 
+  // Když se přepis nespustí, smažeme úlohu celou: prohlížeč se na ni už
+  // nezeptá a při opakování založí novou. Nic tak v úložišti nezůstane.
   const s = store();
   const parts: ArrayBuffer[] = [];
   for (let i = 0; i < job.chunks; i++) {
     const part = await s.get(chunkKey(id, i), { type: "arrayBuffer" });
-    if (!part) return fail(`Chybí část ${i + 1} z ${job.chunks}. Nahrajte soubor znovu.`);
+    if (!part) {
+      await deleteJob(job);
+      return fail(`Chybí část ${i + 1} z ${job.chunks}. Nahrajte soubor znovu.`);
+    }
     parts.push(part);
   }
   const audio = new Blob(parts, { type: job.mime });
-  if (audio.size !== job.size) return fail("Nahraný soubor nemá očekávanou velikost. Nahrajte ho znovu.");
+  if (audio.size !== job.size) {
+    await deleteJob(job);
+    return fail("Nahraný soubor nemá očekávanou velikost. Nahrajte ho znovu.");
+  }
 
   try {
     if (job.provider === "soniox") await startSoniox(job, audio);
     else await startElevenLabs(job, audio);
-    job.status = "processing";
   } catch (e) {
-    job.status = "error";
-    job.error = e instanceof Error ? e.message : String(e);
+    await deleteJob(job);
+    return fail(e instanceof Error ? e.message : String(e), 502);
   }
+  job.status = "processing";
   await saveJob(job);
   await deleteAudio(job);
-
-  if (job.status === "error") return fail(job.error!, 502);
   return json({ ok: true });
 };
 
