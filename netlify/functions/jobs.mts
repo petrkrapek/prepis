@@ -7,7 +7,7 @@ import {
 
 // Založí přepisovou úlohu a vrátí její ID a počet kousků k nahrání.
 export default async (req: Request) => {
-  const denied = checkAuth(req);
+  const denied = await checkAuth();
   if (denied) return denied;
 
   let b: any;

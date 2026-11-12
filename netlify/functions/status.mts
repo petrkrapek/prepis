@@ -8,7 +8,7 @@ const GIVE_UP_MS = 3 * 60 * 60 * 1000; // po 3 hodinách bez výsledku úlohu vz
 // Vrací stav úlohy. Hotový přepis vydá jednou a pak úlohu smaže,
 // aby na serveru nezůstávaly texty přepisů.
 export default async (req: Request) => {
-  const denied = checkAuth(req);
+  const denied = await checkAuth();
   if (denied) return denied;
 
   const id = new URL(req.url).searchParams.get("job");

@@ -3,490 +3,955 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11161c" media="(prefers-color-scheme: dark)">
 <title>Přepis zvuku</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232f4bc4'/><path d='M16 7a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0v-6a3 3 0 0 0-3-3zM22 15a6 6 0 0 1-12 0M16 21v4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: light;
-  --paper: #edf0f3;
+  --paper: #eef1f4;
   --surface: #ffffff;
-  --ink: #16212c;
-  --muted: #5b6875;
-  --line: #d3d9df;
+  --sunken: #f5f7f9;
+  --ink: #15202b;
+  --muted: #5a6773;
+  --line: #d8dee4;
+  --line-strong: #b4bec8;
   --accent: #2f4bc4;
+  --accent-hover: #263fa8;
+  --accent-weak: #e8ecfb;
   --accent-ink: #ffffff;
   --rec: #c2363f;
+  --rec-weak: #fbeaeb;
   --ok: #1f7a4d;
+  --shadow: 0 1px 2px rgb(16 24 40 / .05), 0 6px 20px rgb(16 24 40 / .06);
+  --radius: 14px;
   --ui: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
   --read: "Source Serif 4", Georgia, "Times New Roman", serif;
-  box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --paper: #12171d;
-    --surface: #1a2129;
+    --paper: #11161c;
+    --surface: #19212a;
+    --sunken: #141b22;
     --ink: #e6ebf0;
-    --muted: #93a0ad;
-    --line: #2c3640;
+    --muted: #95a2ae;
+    --line: #2a343e;
+    --line-strong: #3d4955;
     --accent: #8ea2ff;
+    --accent-hover: #a9b8ff;
+    --accent-weak: #222c52;
     --accent-ink: #0e1430;
     --rec: #ff6b73;
+    --rec-weak: #3a1d21;
     --ok: #5fd39a;
+    --shadow: none;
   }
 }
-*, *::before, *::after { box-sizing: inherit; }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--paper);
   color: var(--ink);
   font: 400 1rem/1.55 var(--ui);
 }
 button, input, select, textarea { font: inherit; color: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.i { width: 1.05rem; height: 1.05rem; flex: none; }
+.hint { color: var(--muted); font-size: .875rem; margin: .4rem 0 0; }
 
-.wrap { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
-header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
-h1 { font-size: 1.6rem; line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
-.lock { background: none; border: 0; color: var(--muted); cursor: pointer; padding: .25rem; text-decoration: underline; text-underline-offset: 3px; }
+/* ---------- tlačítka ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  border-radius: 8px; padding: .45rem .8rem; cursor: pointer; font-weight: 700; font-size: .9rem; line-height: 1.3;
+}
+.btn:hover:not(:disabled) { background: var(--sunken); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-solid { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.btn-solid:hover:not(:disabled) { background: var(--ink); opacity: .88; }
+.btn.done, .btn.done:hover:not(:disabled) { background: var(--ok); border-color: var(--ok); color: var(--surface); opacity: 1; }
+.btn-ghost { border-color: var(--line); background: transparent; font-weight: 400; padding: .35rem .7rem; }
+.primary {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: .6rem;
+  border: 0; border-radius: 10px; padding: .85rem 1rem; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 1.05rem;
+}
+.primary:hover:not(:disabled) { background: var(--accent-hover); }
+.primary:disabled { opacity: .45; cursor: not-allowed; }
+.spinner {
+  width: 1rem; height: 1rem; flex: none; display: inline-block;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.grid { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 26rem) minmax(0, 1fr); align-items: start; }
-@media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+.alert {
+  background: var(--rec-weak); border: 1px solid var(--line); border-left: 4px solid var(--rec);
+  border-radius: 10px; padding: .7rem .9rem; margin: 0; text-align: left;
+}
+.alert strong { display: block; color: var(--rec); margin-bottom: .15rem; }
+.alert p { margin: 0; }
 
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.25rem; }
-fieldset { border: 0; padding: 0; margin: 0 0 1.25rem; min-width: 0; }
-legend, .label { font-weight: 700; margin-bottom: .45rem; padding: 0; display: block; }
-.hint { color: var(--muted); font-size: .875rem; margin: .35rem 0 0; }
+/* ---------- přihlašovací obrazovka ---------- */
+.gate { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem 1rem; }
+.gate-card {
+  width: min(25rem, 100%); padding: 2.25rem 1.75rem 1.75rem; text-align: center;
+  display: grid; gap: 1.1rem; justify-items: center;
+}
+.gate-card h1 { margin: 0; font-size: 1.45rem; line-height: 1.2; letter-spacing: -.01em; }
+.gate-card p { margin: 0; color: var(--muted); }
+.gate-panel { display: grid; gap: 1rem; width: 100%; }
+.gate-state { display: flex; align-items: center; justify-content: center; gap: .6rem; color: var(--muted); }
+.gate-foot { font-size: .8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; width: 100%; }
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: .75rem; width: 100%;
+  padding: .75rem 1rem; border-radius: 10px; border: 1px solid #747775;
+  background: #ffffff; color: #1f1f1f; font-weight: 700; cursor: pointer;
+}
+.google-btn:hover { background: #f6f8fa; }
+.google-btn svg { width: 1.15rem; height: 1.15rem; }
+@media (prefers-color-scheme: dark) {
+  .google-btn { background: #131314; color: #e3e3e3; border-color: #8e918f; }
+  .google-btn:hover { background: #1f1f21; }
+}
 
-/* přepínače */
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
+/* ---------- rozvržení aplikace ---------- */
+.wrap { max-width: 74rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+@media (min-width: 640px) { .wrap { padding: 1.5rem 1.5rem 3rem; } }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.brand { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+.brand h1 { font-size: 1.25rem; margin: 0; line-height: 1.2; letter-spacing: -.01em; white-space: nowrap; }
+.brand-mark {
+  width: 2.25rem; height: 2.25rem; border-radius: 10px; flex: none;
+  background: var(--accent); color: var(--accent-ink); display: grid; place-items: center;
+}
+.brand-mark svg { width: 1.2rem; height: 1.2rem; }
+.brand-mark.lg { width: 3.25rem; height: 3.25rem; border-radius: 14px; }
+.brand-mark.lg svg { width: 1.7rem; height: 1.7rem; }
+.account { display: flex; align-items: center; gap: .6rem; font-size: .9rem; color: var(--muted); min-width: 0; }
+.account .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 18rem; }
+@media (max-width: 480px) { .account .email { display: none; } }
+
+.grid { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 27rem) minmax(0, 1fr); align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* ---------- zadání ---------- */
+.form { padding: 1.25rem; }
+.section + .section { border-top: 1px solid var(--line); margin-top: 1.35rem; padding-top: 1.35rem; }
+.section-head { display: flex; align-items: center; gap: .6rem; margin: 0 0 .9rem; font-size: 1.05rem; line-height: 1.3; }
+.num {
+  width: 1.6rem; height: 1.6rem; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--accent-weak); color: var(--accent); font-size: .85rem; font-weight: 700;
+}
+.opt { color: var(--muted); font-weight: 400; font-size: .875rem; }
+.field + .field { margin-top: 1rem; }
+.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: .4rem; }
+.label { font-weight: 700; display: block; }
+.count { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.count.over { color: var(--rec); font-weight: 700; }
+.field.off textarea { opacity: .5; }
+
+select, textarea {
+  width: 100%; background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem;
+}
+select:hover, textarea:hover:not(:disabled) { border-color: var(--line-strong); }
+textarea { resize: vertical; min-height: 5.5rem; }
+
+/* přepínač zdroje */
+.seg {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; padding: 3px;
+  background: var(--sunken); border: 1px solid var(--line); border-radius: 10px;
+}
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg label { text-align: center; padding: .5rem .6rem; border-radius: 7px; cursor: pointer; color: var(--muted); }
-.seg input:checked + label { background: var(--ink); color: var(--surface); }
+.seg label {
+  display: flex; align-items: center; justify-content: center; gap: .45rem;
+  padding: .5rem .6rem; border-radius: 7px; cursor: pointer; color: var(--muted); font-weight: 700; font-size: .95rem;
+}
+.seg input:checked + label { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(16 24 40 / .08); }
 .seg input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 1px; }
 
 /* nahrávání */
-.recorder { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1rem; }
+.recorder {
+  margin-top: .9rem; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1.1rem;
+  padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--sunken);
+}
 .rec-btn {
-  width: 5.5rem; height: 5.5rem; border-radius: 50%;
-  border: 2px solid var(--rec); background: transparent; cursor: pointer;
-  display: grid; place-items: center; position: relative;
+  width: 4.75rem; height: 4.75rem; border-radius: 50%; position: relative; cursor: pointer;
+  border: 2px solid var(--rec); background: var(--surface); display: grid; place-items: center;
 }
-.rec-btn::after { content: ""; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--rec); transition: border-radius .2s, width .2s, height .2s; }
-.rec-btn[aria-pressed="true"]::after { width: 1.7rem; height: 1.7rem; border-radius: 5px; }
+.rec-btn::after {
+  content: ""; width: 2rem; height: 2rem; border-radius: 50%; background: var(--rec);
+  transition: border-radius .2s, width .2s, height .2s;
+}
+.rec-btn[aria-pressed="true"]::after { width: 1.55rem; height: 1.55rem; border-radius: 5px; }
 .rec-btn canvas { position: absolute; inset: -10px; width: calc(100% + 20px); height: calc(100% + 20px); pointer-events: none; }
-.rec-time { font-size: 1.75rem; font-variant-numeric: tabular-nums; line-height: 1; }
-.rec-state { color: var(--muted); font-size: .875rem; }
-.file-drop { display: block; border: 1.5px dashed var(--line); border-radius: 10px; padding: 1.1rem; text-align: center; cursor: pointer; color: var(--muted); }
-.file-drop:hover, .file-drop.over { border-color: var(--accent); color: var(--ink); }
+.rec-time { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.rec-state { color: var(--muted); font-size: .875rem; margin-top: .2rem; }
+.recording .rec-time { color: var(--rec); }
+
+/* soubor */
+.file-drop {
+  margin-top: .9rem; position: relative; display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: 1.4rem 1rem; border: 1.5px dashed var(--line-strong); border-radius: 12px; background: var(--sunken);
+  text-align: center; color: var(--muted); cursor: pointer;
+}
+.file-drop svg { width: 1.75rem; height: 1.75rem; color: var(--accent); margin-bottom: .2rem; }
+.file-drop strong { color: var(--ink); }
+.file-drop:hover, .file-drop.over { border-color: var(--accent); background: var(--accent-weak); }
+.file-drop:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
 .file-drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.picked { margin-top: .75rem; display: none; }
-.picked.on { display: block; }
-.picked audio { width: 100%; margin-top: .4rem; }
-[hidden] { display: none !important; }
+.src-err { margin-top: .75rem; }
 
-select, textarea, input[type="password"] {
-  width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem;
+.picked { margin-top: .9rem; padding: .85rem .9rem; border: 1px solid var(--line); border-radius: 12px; }
+.picked-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.picked-info { min-width: 0; }
+.picked-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picked-info span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.picked audio { width: 100%; margin-top: .6rem; height: 2.5rem; }
+
+/* volba služby */
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+@media (max-width: 380px) { .choices { grid-template-columns: 1fr; } }
+.choices input { position: absolute; opacity: 0; pointer-events: none; }
+.choices label {
+  display: grid; gap: .15rem; padding: .7rem .8rem; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
 }
-textarea { resize: vertical; min-height: 5.5rem; }
-.check { display: flex; gap: .55rem; align-items: center; cursor: pointer; }
-.check input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
-.note-off { opacity: .55; }
+.choices label:hover { border-color: var(--line-strong); }
+.choices label span { color: var(--muted); font-size: .825rem; line-height: 1.4; }
+.choices input:checked + label { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-weak); }
+.choices input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-.primary {
-  width: 100%; border: 0; border-radius: 10px; padding: .8rem 1rem; cursor: pointer;
-  background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 1.05rem;
+/* vypínač */
+.switch { display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: start; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.track {
+  width: 2.6rem; height: 1.5rem; margin-top: .05rem; border-radius: 999px; position: relative;
+  background: var(--line-strong); transition: background .15s;
 }
-.primary:disabled { opacity: .45; cursor: not-allowed; }
-
-/* výstup */
-.out { position: sticky; top: calc(1rem + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; min-height: 24rem; }
-.out-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
-.out-head h2 { font-size: 1.1rem; margin: 0; }
-.copy { border: 1px solid var(--ink); background: var(--ink); color: var(--surface); border-radius: 8px; padding: .5rem .9rem; cursor: pointer; font-weight: 700; }
-.copy:disabled { opacity: .35; cursor: not-allowed; }
-.copy.done { background: var(--ok); border-color: var(--ok); }
-.text {
-  flex: 1; margin-top: 1rem; font-family: var(--read); font-size: 1.08rem; line-height: 1.7;
-  white-space: pre-wrap; overflow-wrap: anywhere; max-width: 68ch; max-height: 70vh; overflow-y: auto;
+.track::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: calc(1.5rem - 6px); height: calc(1.5rem - 6px);
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .25); transition: transform .15s;
 }
-.empty { color: var(--muted); font-family: var(--ui); font-size: 1rem; }
-.status { display: flex; align-items: center; gap: .6rem; color: var(--muted); font-family: var(--ui); font-size: 1rem; }
-.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: .6rem; max-width: 22rem; }
-.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
-.err { color: var(--rec); font-family: var(--ui); }
-.meta { color: var(--muted); font-size: .85rem; margin-top: .75rem; }
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(1.1rem); }
+.switch input:focus-visible + .track { outline: 3px solid var(--accent); outline-offset: 2px; }
+.switch .hint { margin: .1rem 0 0; }
 
-dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); padding: 1.5rem; width: min(24rem, calc(100vw - 2rem)); }
-dialog::backdrop { background: rgb(0 0 0 / .45); }
-dialog h2 { margin: 0 0 .75rem; font-size: 1.2rem; }
-dialog form { display: grid; gap: .9rem; }
+.submit { margin-top: 1.5rem; }
+.submit .hint { text-align: center; }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* ---------- výsledek ---------- */
+.result { position: sticky; top: 1rem; display: flex; flex-direction: column; min-height: 26rem; }
+@media (max-width: 860px) { .result { position: static; min-height: 18rem; } }
+.result-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+  padding: .9rem 1.25rem; border-bottom: 1px solid var(--line);
+}
+.result-head h2 { font-size: 1.1rem; margin: 0; }
+.actions { display: flex; gap: .5rem; }
+.result-body { flex: 1; padding: 1.25rem; display: flex; flex-direction: column; }
+.result-foot {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem 1rem;
+  padding: .75rem 1.25rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem;
+}
+
+.empty { margin: auto; max-width: 22rem; text-align: center; color: var(--muted); padding: 2rem 0; }
+.empty svg { width: 2.25rem; height: 2.25rem; color: var(--line-strong); margin-bottom: .5rem; }
+.empty p { margin: 0; }
+.empty strong { display: block; color: var(--ink); margin-bottom: .25rem; }
+
+.transcript {
+  font-family: var(--read); font-size: 1.08rem; line-height: 1.7; max-width: 68ch;
+  white-space: pre-wrap; overflow-wrap: anywhere; max-height: 70vh; overflow-y: auto;
+}
+@media (max-width: 860px) { .transcript { max-height: none; } }
+
+.progress { display: grid; gap: 1.25rem; max-width: 26rem; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.step { display: grid; grid-template-columns: 1.5rem 1fr; gap: .75rem; align-items: start; color: var(--muted); }
+.step strong { display: block; font-weight: 700; color: inherit; }
+.step .detail { font-size: .875rem; font-variant-numeric: tabular-nums; }
+.dot {
+  width: 1.5rem; height: 1.5rem; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid var(--line-strong); color: var(--surface);
+}
+.dot svg { width: .9rem; height: .9rem; }
+.step.active { color: var(--ink); }
+.step.active .dot { border-color: var(--accent); }
+.step.active .dot::after { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.step.done .dot { background: var(--ok); border-color: var(--ok); }
+@keyframes pulse { 50% { transform: scale(.55); opacity: .5; } }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: .5rem; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+.error-view { display: grid; gap: 1rem; justify-items: start; max-width: 34rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+  .spinner { animation-duration: 2s; }
+  .step.active .dot::after { animation: none; }
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
+
+<main class="gate" id="gate">
+  <div class="card gate-card">
+    <span class="brand-mark lg" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+    </span>
     <h1>Přepis zvuku</h1>
-    <button class="lock" id="logout" type="button" hidden>Odhlásit</button>
+
+    <div class="gate-state" id="gate-checking" role="status">
+      <span class="spinner" aria-hidden="true"></span> Ověřuji přihlášení…
+    </div>
+
+    <div class="gate-panel" id="gate-login" hidden>
+      <p>Převede nahrávku z mikrofonu nebo ze souboru na text. Přihlaste se účtem Google, který má povolený přístup.</p>
+      <div class="alert" id="gate-err" role="alert" hidden></div>
+      <button class="google-btn" id="google" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Přihlásit se přes Google
+      </button>
+    </div>
+
+    <div class="gate-panel" id="gate-denied" hidden>
+      <div class="alert" role="alert"><strong>Tento účet nemá přístup</strong><p id="denied-msg"></p></div>
+      <button class="btn" id="switch" type="button">Přihlásit se jiným účtem</button>
+    </div>
+
+    <p class="gate-foot">Soukromá aplikace. Přístup mají jen povolené e&#8209;mailové adresy.</p>
+    <noscript><p class="alert">Aplikace potřebuje zapnutý JavaScript.</p></noscript>
+  </div>
+</main>
+
+<div class="wrap" id="app" hidden>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+      </span>
+      <h1>Přepis zvuku</h1>
+    </div>
+    <div class="account">
+      <span class="email" id="who"></span>
+      <button class="btn btn-ghost" id="logout" type="button">Odhlásit</button>
+    </div>
   </header>
 
   <div class="grid">
-    <section class="panel" aria-label="Zadání přepisu">
-      <fieldset>
-        <legend>Zvuk</legend>
-        <div class="seg" role="radiogroup">
-          <input type="radio" name="src" id="src-rec" value="rec" checked><label for="src-rec">Nahrát mikrofonem</label>
-          <input type="radio" name="src" id="src-file" value="file"><label for="src-file">Vybrat soubor</label>
+    <section class="card form" aria-label="Zadání přepisu">
+
+      <div class="section">
+        <h2 class="section-head"><span class="num" aria-hidden="true">1</span>Zvuk</h2>
+        <div class="seg" role="radiogroup" aria-label="Zdroj zvuku">
+          <input type="radio" name="src" id="src-rec" value="rec" checked>
+          <label for="src-rec">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+            Mikrofon
+          </label>
+          <input type="radio" name="src" id="src-file" value="file">
+          <label for="src-file">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+            Soubor
+          </label>
         </div>
 
-        <div id="pane-rec" style="margin-top:1rem">
-          <div class="recorder">
+        <div id="pane-rec">
+          <div class="recorder" id="recorder">
             <button class="rec-btn" id="rec" type="button" aria-pressed="false" aria-label="Spustit nahrávání">
               <canvas id="level" width="220" height="220" aria-hidden="true"></canvas>
             </button>
             <div>
               <div class="rec-time" id="rec-time">0:00</div>
-              <div class="rec-state" id="rec-state">Klepněte pro spuštění nahrávání</div>
+              <div class="rec-state" id="rec-state">Stiskněte tlačítko a začněte mluvit.</div>
             </div>
           </div>
         </div>
 
-        <div id="pane-file" style="margin-top:1rem" hidden>
+        <div id="pane-file" hidden>
           <label class="file-drop" id="drop">
             <input type="file" id="file" accept="audio/*,video/*">
-            Přetáhněte sem zvukový nebo video soubor, nebo klepněte a vyberte ho
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            <span><strong>Vyberte soubor</strong> nebo ho sem přetáhněte</span>
+            <span class="hint">Zvuk i video, nejvýš 150 MB</span>
           </label>
         </div>
 
-        <div class="picked" id="picked">
-          <div id="picked-name"></div>
+        <div class="alert src-err" id="src-err" role="alert" hidden></div>
+
+        <div class="picked" id="picked" hidden>
+          <div class="picked-head">
+            <div class="picked-info">
+              <strong id="picked-name"></strong>
+              <span id="picked-meta"></span>
+            </div>
+            <button class="btn btn-ghost" id="clear" type="button">Odebrat</button>
+          </div>
           <audio id="preview" controls preload="metadata"></audio>
         </div>
-      </fieldset>
+      </div>
 
-      <fieldset>
-        <legend>Přepisová služba</legend>
-        <div class="seg" role="radiogroup">
-          <input type="radio" name="provider" id="p-soniox" value="soniox" checked><label for="p-soniox">Soniox</label>
-          <input type="radio" name="provider" id="p-eleven" value="elevenlabs"><label for="p-eleven">ElevenLabs Scribe</label>
+      <div class="section">
+        <h2 class="section-head"><span class="num" aria-hidden="true">2</span>Služba a jazyk</h2>
+        <div class="choices" role="radiogroup" aria-label="Přepisová služba">
+          <input type="radio" name="provider" id="p-soniox" value="soniox" checked>
+          <label for="p-soniox"><strong>Soniox</strong><span>Využije kontext i odborné výrazy</span></label>
+          <input type="radio" name="provider" id="p-eleven" value="elevenlabs">
+          <label for="p-eleven"><strong>ElevenLabs Scribe</strong><span>Využije jen odborné výrazy</span></label>
         </div>
-      </fieldset>
+        <div class="field" style="margin-top:1rem">
+          <label class="label" for="lang" style="margin-bottom:.4rem">Jazyk nahrávky</label>
+          <select id="lang">
+            <option value="cs" selected>Čeština</option>
+            <option value="sk">Slovenština</option>
+            <option value="en">Angličtina</option>
+            <option value="de">Němčina</option>
+            <option value="auto">Rozpoznat automaticky</option>
+          </select>
+        </div>
+      </div>
 
-      <fieldset>
-        <label class="label" for="lang">Jazyk nahrávky</label>
-        <select id="lang">
-          <option value="cs" selected>Čeština</option>
-          <option value="sk">Slovenština</option>
-          <option value="en">Angličtina</option>
-          <option value="de">Němčina</option>
-          <option value="auto">Rozpoznat automaticky</option>
-        </select>
-      </fieldset>
+      <div class="section">
+        <h2 class="section-head"><span class="num" aria-hidden="true">3</span>Upřesnění <span class="opt">(nepovinné)</span></h2>
+        <div class="field" id="ctx-field">
+          <div class="field-head">
+            <label class="label" for="context">Kontext</label>
+            <span class="count" id="ctx-count" aria-hidden="true">0 / 8 000</span>
+          </div>
+          <textarea id="context" rows="4" maxlength="8000" aria-describedby="ctx-hint" placeholder="O čem nahrávka je, kdo v ní mluví, jaká jména a zkratky zazní…"></textarea>
+          <p class="hint" id="ctx-hint">Pomůže správně zachytit téma, jména a zkratky.</p>
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label class="label" for="terms">Odborné výrazy a jména</label>
+            <span class="count" id="terms-count" aria-hidden="true">0 / 100</span>
+          </div>
+          <textarea id="terms" rows="3" aria-describedby="terms-hint" placeholder="Každý výraz na nový řádek, např.&#10;NIS Chameleon&#10;chemostacionář"></textarea>
+          <p class="hint" id="terms-hint">Služba je pak napíše správně. Nejvýš 100 výrazů, každý do 50 znaků.</p>
+        </div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="diarize" role="switch">
+            <span class="track" aria-hidden="true"></span>
+            <span><strong>Rozlišit mluvčí</strong><p class="hint">Přepis označí, kdo kdy mluví: Mluvčí 1, Mluvčí 2…</p></span>
+          </label>
+        </div>
+      </div>
 
-      <fieldset id="ctx-wrap">
-        <label class="label" for="context">Kontext</label>
-        <textarea id="context" rows="4" placeholder="O čem nahrávka je, kdo mluví, odkud pochází…"></textarea>
-        <p class="hint" id="ctx-hint">Pomůže službě správně pochopit téma a jména.</p>
-      </fieldset>
-
-      <fieldset>
-        <label class="label" for="terms">Odborné výrazy a jména</label>
-        <textarea id="terms" rows="3" placeholder="Každý výraz na nový řádek, např.&#10;NIS Chameleon&#10;chemostacionář"></textarea>
-        <p class="hint">Nejvýš 100 výrazů, každý do 50 znaků.</p>
-      </fieldset>
-
-      <fieldset>
-        <label class="check"><input type="checkbox" id="diarize"> Rozlišit mluvčí</label>
-      </fieldset>
-
-      <button class="primary" id="go" type="button" disabled>Přepsat</button>
+      <div class="submit">
+        <button class="primary" id="go" type="button" disabled>
+          <span class="spinner" id="go-spin" aria-hidden="true" hidden></span>
+          <span id="go-label">Spustit přepis</span>
+        </button>
+        <p class="hint" id="go-hint">Nejdřív nahrajte zvuk nebo vyberte soubor.</p>
+      </div>
     </section>
 
-    <section class="panel out" aria-live="polite" aria-label="Výsledek přepisu">
-      <div class="out-head">
-        <h2>Přepis</h2>
-        <button class="copy" id="copy" type="button" disabled>Kopírovat celý přepis</button>
+    <section class="card result" id="result" aria-labelledby="result-title">
+      <div class="result-head">
+        <h2 id="result-title">Přepis</h2>
+        <div class="actions">
+          <button class="btn" id="download" type="button" disabled>
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
+            <span>Stáhnout .txt</span>
+          </button>
+          <button class="btn btn-solid" id="copy" type="button" disabled>
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg>
+            <span>Kopírovat</span>
+          </button>
+        </div>
       </div>
-      <div class="text" id="out"><p class="empty">Přepis se zobrazí tady. Nahrajte zvuk nebo vyberte soubor a klepněte na Přepsat.</p></div>
-      <div class="meta" id="meta"></div>
+      <div class="result-body" id="out">
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+          <p><strong>Zatím tu nic není</strong>Nahrajte zvuk nebo vyberte soubor a spusťte přepis. Text se zobrazí tady.</p>
+        </div>
+      </div>
+      <div class="result-foot" id="meta" hidden>
+        <span id="meta-text"></span>
+        <span>Přepis se na serveru neukládá. Zkopírujte si ho nebo stáhněte.</span>
+      </div>
     </section>
   </div>
 </div>
 
-<dialog id="login">
-  <form method="dialog" id="login-form">
-    <h2>Přihlášení</h2>
-    <div>
-      <label class="label" for="pw">Heslo k aplikaci</label>
-      <input type="password" id="pw" autocomplete="current-password" required>
-      <p class="hint err" id="pw-err" hidden></p>
-    </div>
-    <button class="primary" type="submit">Pokračovat</button>
-  </form>
-</dialog>
+<p class="sr-only" id="announce" aria-live="polite"></p>
 
-<script>
-(() => {
-  const $ = (id) => document.getElementById(id);
-  const PW_KEY = "prepis-heslo";
-  let password = "";
-  try { password = localStorage.getItem(PW_KEY) || ""; } catch {}
+<script type="module">
+// Knihovnu pro přihlášení načítáme dynamicky, aby šlo ukázat srozumitelnou chybu, když se nenačte.
+let auth = null;
+try { auth = await import("/identity.js"); } catch {}
 
-  let audio = null;            // { blob, name }
-  let recorder = null, stream = null, chunks = [], t0 = 0, timer = null, raf = null, actx = null;
-  let busy = false, transcript = "";
+const $ = (id) => document.getElementById(id);
+const MAX_BYTES = 150 * 1024 * 1024;
+const MAX_TERMS = 100;
+const PROVIDERS = { soniox: "Soniox", elevenlabs: "ElevenLabs Scribe" };
+const STEPS = [["upload", "Nahrání zvuku na server"], ["start", "Předání přepisové službě"], ["wait", "Přepis"]];
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ---------- přihlášení ----------
-  function askPassword(message) {
-    $("pw-err").hidden = !message;
-    $("pw-err").textContent = message || "";
-    $("pw").value = "";
-    $("login").showModal();
+let audio = null;            // { blob, name, url, secs }
+let recorder = null, stream = null, chunks = [], t0 = 0, timer = null, raf = null, actx = null;
+let busy = false, allowed = false;
+let transcript = "", saved = true, lastName = "";
+
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const num = (n) => n.toLocaleString("cs-CZ");
+const mb = (b) => `${(b / 1024 / 1024).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} MB`;
+const plural = (n, one, few, many) => (n === 1 ? one : n >= 2 && n <= 4 ? few : many);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const announce = (msg) => { $("announce").textContent = msg; };
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function stamp() {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+// ---------- přihlášení (Netlify Identity + Google) ----------
+// state: "checking" | "login" | "denied"
+function gate(state, message = "") {
+  allowed = false;
+  $("app").hidden = true;
+  $("gate").hidden = false;
+  for (const s of ["checking", "login", "denied"]) $(`gate-${s}`).hidden = s !== state;
+  $("gate-err").hidden = !(state === "login" && message);
+  $("gate-err").textContent = state === "login" ? message : "";
+  if (state === "denied") $("denied-msg").textContent = message;
+}
+function openApp() {
+  allowed = true;
+  $("gate").hidden = true;
+  $("app").hidden = false;
+}
+
+$("google").addEventListener("click", () => {
+  try { auth.oauthLogin("google"); } catch {} // přesměruje na Google; výjimka tu jen značí odchod ze stránky
+});
+
+async function signOut() {
+  if (busy && !confirm("Přepis ještě běží. Opravdu se chcete odhlásit?")) return;
+  try { await auth?.logout(); } catch {}
+  $("who").textContent = "";
+  gate("login");
+}
+$("logout").addEventListener("click", signOut);
+$("switch").addEventListener("click", signOut);
+
+async function initAuth() {
+  if (!auth) { gate("login", "Nepodařilo se načíst přihlašování. Obnovte stránku."); return; }
+  const hash = new URLSearchParams(location.hash.slice(1));
+  if (hash.has("error")) {
+    // Google nebo Netlify vrátily chybu, např. když uživatel přihlášení zrušil.
+    history.replaceState(null, "", location.pathname + location.search);
+    gate("login", `Přihlášení se nepodařilo: ${hash.get("error_description") || hash.get("error")}`);
+    return;
   }
-  $("login-form").addEventListener("submit", () => {
-    password = $("pw").value;
-    try { localStorage.setItem(PW_KEY, password); } catch {}
-    $("logout").hidden = false;
-  });
-  $("logout").addEventListener("click", () => {
-    password = "";
-    try { localStorage.removeItem(PW_KEY); } catch {}
-    $("logout").hidden = true;
-    askPassword();
-  });
-  if (!password) askPassword(); else $("logout").hidden = false;
+  if (hash.has("access_token")) {
+    try { await auth.handleAuthCallback(); }
+    catch (e) { gate("login", `Přihlášení se nepodařilo: ${e.message}`); return; }
+  }
 
-  async function api(path, opts = {}) {
-    const res = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), "x-app-password": password } });
-    let data = {};
-    try { data = await res.json(); } catch {}
-    if (res.status === 401) {
-      try { localStorage.removeItem(PW_KEY); } catch {}
-      askPassword("Heslo nesouhlasí. Zadejte ho znovu.");
-      throw new Error("Přihlaste se a klepněte na Přepsat znovu.");
+  const user = await auth.getUser();
+  if (!user) { gate("login"); return; }
+  $("who").textContent = user.email || "";
+  $("who").title = user.email || "";
+  $("logout").title = user.email ? `Odhlásit ${user.email}` : "";
+  try {
+    await api("/api/me");
+    openApp();
+  } catch (e) {
+    if (!e.auth) gate("login", `Nepodařilo se ověřit přístup: ${e.message}`);
+  }
+}
+
+async function api(path, opts = {}) {
+  try { await auth?.refreshSession(); } catch {} // obnoví token, pokud brzy vyprší
+  let res;
+  try { res = await fetch(path, opts); }
+  catch { throw new Error("Nepodařilo se spojit se serverem. Zkontrolujte připojení k internetu."); }
+  let data = {};
+  try { data = await res.json(); } catch {}
+  if (res.status === 401 || res.status === 403) {
+    const expired = res.status === 401;
+    const msg = expired ? "Přihlášení vypršelo. Přihlaste se znovu." : data.error || "Tento účet nemá do aplikace přístup.";
+    gate(expired ? "login" : "denied", msg);
+    throw Object.assign(new Error(msg), { auth: true });
+  }
+  if (!res.ok) throw new Error(data.error || `Server vrátil chybu ${res.status}.`);
+  return data;
+}
+
+// ---------- zdroj zvuku ----------
+document.querySelectorAll('input[name="src"]').forEach((r) => r.addEventListener("change", () => {
+  const file = $("src-file").checked;
+  $("pane-file").hidden = !file;
+  $("pane-rec").hidden = file;
+  $("src-err").hidden = true;
+}));
+
+function showSrcErr(msg) {
+  $("src-err").textContent = msg;
+  $("src-err").hidden = false;
+}
+
+function setAudio(blob, name, secs) {
+  $("src-err").hidden = true;
+  if (!blob.size) { showSrcErr("Soubor je prázdný."); return; }
+  if (blob.size > MAX_BYTES) { showSrcErr(`Soubor má ${mb(blob.size)}. Nahrát lze nejvýš 150 MB.`); return; }
+  if (audio) URL.revokeObjectURL(audio.url);
+  audio = { blob, name, url: URL.createObjectURL(blob), secs };
+  $("preview").src = audio.url;
+  $("picked-name").textContent = name;
+  $("picked-name").title = name;
+  showPickedMeta();
+  $("picked").hidden = false;
+  updateGo();
+}
+function showPickedMeta() {
+  const parts = [mb(audio.blob.size)];
+  if (Number.isFinite(audio.secs) && audio.secs > 0) parts.push(fmt(audio.secs));
+  $("picked-meta").textContent = parts.join(" · ");
+}
+$("preview").addEventListener("loadedmetadata", () => {
+  const d = $("preview").duration;
+  if (audio && Number.isFinite(d) && d > 0) { audio.secs = d; showPickedMeta(); }
+});
+$("clear").addEventListener("click", () => {
+  if (audio) URL.revokeObjectURL(audio.url);
+  audio = null;
+  $("preview").removeAttribute("src");
+  $("preview").load();
+  $("picked").hidden = true;
+  $("file").value = "";
+  updateGo();
+});
+
+// ---------- soubor ----------
+$("file").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (f) setAudio(f, f.name);
+});
+const drop = $("drop");
+["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) setAudio(f, f.name);
+});
+
+// ---------- nahrávání ----------
+function pickMime() {
+  const options = ["audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus", "audio/webm"];
+  return options.find((m) => MediaRecorder.isTypeSupported(m)) || "";
+}
+
+$("rec").addEventListener("click", async () => {
+  if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+  $("src-err").hidden = true;
+  if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) {
+    showSrcErr("Tento prohlížeč neumí nahrávat zvuk. Vyberte místo toho soubor.");
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch {
+    showSrcErr("Mikrofon není dostupný. Povolte ho v nastavení prohlížeče a zkuste to znovu.");
+    return;
+  }
+  const mime = pickMime();
+  recorder = new MediaRecorder(stream, { ...(mime && { mimeType: mime }), audioBitsPerSecond: 32000 });
+  chunks = [];
+  recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  recorder.onstop = () => {
+    clearInterval(timer); cancelAnimationFrame(raf);
+    stream.getTracks().forEach((t) => t.stop());
+    if (actx) actx.close();
+    clearLevel();
+    $("recorder").classList.remove("recording");
+    $("rec").setAttribute("aria-pressed", "false");
+    $("rec").setAttribute("aria-label", "Spustit nové nahrávání");
+    const type = recorder.mimeType || "audio/webm";
+    const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+    const secs = (Date.now() - t0) / 1000;
+    $("rec-state").textContent = "Nahráno. Dalším stisknutím nahrávku nahradíte.";
+    setAudio(new Blob(chunks, { type }), `nahravka-${stamp()}.${ext}`, secs);
+    announce(`Nahrávání ukončeno, délka ${fmt(secs)}.`);
+  };
+  recorder.start(1000);
+  t0 = Date.now();
+  $("rec-time").textContent = "0:00";
+  $("recorder").classList.add("recording");
+  $("rec").setAttribute("aria-pressed", "true");
+  $("rec").setAttribute("aria-label", "Zastavit nahrávání");
+  $("rec-state").textContent = "Nahrává se. Dalším stisknutím nahrávání ukončíte.";
+  announce("Nahrávání spuštěno.");
+  timer = setInterval(() => { $("rec-time").textContent = fmt((Date.now() - t0) / 1000); }, 250);
+  drawLevel(stream);
+});
+
+// kruhový ukazatel hlasitosti kolem tlačítka
+function drawLevel(s) {
+  actx = new AudioContext();
+  const an = actx.createAnalyser();
+  an.fftSize = 512;
+  actx.createMediaStreamSource(s).connect(an);
+  const buf = new Uint8Array(an.fftSize);
+  const c = $("level"), g = c.getContext("2d");
+  const red = getComputedStyle(document.documentElement).getPropertyValue("--rec").trim();
+  let smooth = 0;
+  const tick = () => {
+    an.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (const v of buf) sum += ((v - 128) / 128) ** 2;
+    smooth = Math.max(Math.sqrt(sum / buf.length) * 3, smooth * 0.9);
+    const lvl = Math.min(1, smooth);
+    g.clearRect(0, 0, c.width, c.height);
+    g.strokeStyle = red;
+    g.lineWidth = 6;
+    g.globalAlpha = 0.25 + lvl * 0.75;
+    g.beginPath();
+    g.arc(c.width / 2, c.height / 2, 60 + lvl * 34, 0, Math.PI * 2);
+    g.stroke();
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function clearLevel() { const c = $("level"); c.getContext("2d").clearRect(0, 0, c.width, c.height); }
+
+// ---------- volby ----------
+function provider() { return document.querySelector('input[name="provider"]:checked').value; }
+function syncProvider() {
+  const eleven = provider() === "elevenlabs";
+  $("context").disabled = eleven;
+  $("ctx-field").classList.toggle("off", eleven);
+  $("ctx-hint").textContent = eleven
+    ? "ElevenLabs kontext nepoužívá. Využije jen odborné výrazy níže."
+    : "Pomůže správně zachytit téma, jména a zkratky.";
+}
+document.querySelectorAll('input[name="provider"]').forEach((r) => r.addEventListener("change", syncProvider));
+syncProvider();
+
+function parseTerms() { return $("terms").value.split(/\r?\n|,/).map((t) => t.trim()).filter(Boolean); }
+function syncCounts() {
+  $("ctx-count").textContent = `${num($("context").value.length)} / ${num(8000)}`;
+  const n = parseTerms().length;
+  $("terms-count").textContent = `${n} / ${MAX_TERMS}`;
+  $("terms-count").classList.toggle("over", n > MAX_TERMS);
+}
+$("context").addEventListener("input", syncCounts);
+$("terms").addEventListener("input", syncCounts);
+syncCounts();
+
+function updateGo() {
+  $("go").disabled = busy || !audio;
+  $("go-label").textContent = busy ? "Přepisuje se…" : "Spustit přepis";
+  $("go-spin").hidden = !busy;
+  $("go-hint").hidden = busy || !!audio;
+  $("clear").disabled = busy;
+}
+
+// ---------- výsledek ----------
+const out = $("out");
+let stage = "";
+
+function showProgress(next, detail, pct) {
+  if (next !== stage) announce(STEPS.find(([k]) => k === next)[1] + "…");
+  stage = next;
+  const idx = STEPS.findIndex(([k]) => k === next);
+  const list = el("ol", "steps");
+  STEPS.forEach(([, label], i) => {
+    const li = el("li", `step${i < idx ? " done" : i === idx ? " active" : ""}`);
+    const dot = el("span", "dot");
+    if (i < idx) dot.innerHTML = CHECK;
+    const body = el("div");
+    body.append(el("strong", null, label));
+    if (i === idx && detail) body.append(el("span", "detail", detail));
+    if (i === idx && pct != null) {
+      const bar = el("div", "bar"), fill = el("span");
+      fill.style.width = `${pct}%`;
+      bar.append(fill);
+      body.append(bar);
     }
-    if (!res.ok) throw new Error(data.error || `Server vrátil chybu ${res.status}.`);
-    return data;
-  }
-
-  // ---------- volba zdroje ----------
-  document.querySelectorAll('input[name="src"]').forEach((r) => r.addEventListener("change", () => {
-    const file = $("src-file").checked;
-    $("pane-file").hidden = !file;
-    $("pane-rec").hidden = file;
-  }));
-
-  function setAudio(blob, name) {
-    audio = { blob, name };
-    const url = URL.createObjectURL(blob);
-    $("preview").src = url;
-    $("picked-name").textContent = `${name} · ${(blob.size / 1024 / 1024).toFixed(1)} MB`;
-    $("picked").classList.add("on");
-    updateGo();
-  }
-
-  // ---------- soubor ----------
-  $("file").addEventListener("change", (e) => {
-    const f = e.target.files[0];
-    if (f) setAudio(f, f.name);
+    li.append(dot, body);
+    list.append(li);
   });
-  const drop = $("drop");
-  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
-  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", (e) => {
-    const f = e.dataTransfer.files[0];
-    if (f) setAudio(f, f.name);
-  });
+  const wrap = el("div", "progress");
+  wrap.append(list, el("p", "hint", "Stránku nechte otevřenou, dokud se přepis nezobrazí."));
+  out.replaceChildren(wrap);
+}
 
-  // ---------- nahrávání ----------
-  function pickMime() {
-    const options = ["audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus", "audio/webm"];
-    return options.find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+function showError(msg) {
+  stage = "";
+  const box = el("div", "alert");
+  box.append(el("strong", null, "Přepis se nepodařil"), el("p", null, msg));
+  const view = el("div", "error-view");
+  view.append(box);
+  if (audio && allowed) {
+    const retry = el("button", "btn", "Zkusit znovu");
+    retry.type = "button";
+    retry.addEventListener("click", () => $("go").click());
+    view.append(retry);
   }
-  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  out.replaceChildren(view);
+  announce(`Přepis se nepodařil. ${msg}`);
+}
 
-  $("rec").addEventListener("click", async () => {
-    if (recorder && recorder.state === "recording") { recorder.stop(); return; }
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-    } catch {
-      $("rec-state").textContent = "Mikrofon není dostupný. Povolte ho v prohlížeči.";
-      return;
-    }
-    const mime = pickMime();
-    recorder = new MediaRecorder(stream, { ...(mime && { mimeType: mime }), audioBitsPerSecond: 32000 });
-    chunks = [];
-    recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-    recorder.onstop = () => {
-      clearInterval(timer); cancelAnimationFrame(raf);
-      stream.getTracks().forEach((t) => t.stop());
-      if (actx) actx.close();
-      clearLevel();
-      $("rec").setAttribute("aria-pressed", "false");
-      $("rec").setAttribute("aria-label", "Spustit nahrávání");
-      const type = recorder.mimeType || "audio/webm";
-      const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
-      const secs = (Date.now() - t0) / 1000;
-      $("rec-state").textContent = `Nahráno ${fmt(secs)}. Klepněte pro novou nahrávku.`;
-      setAudio(new Blob(chunks, { type }), `nahravka.${ext}`);
-    };
-    recorder.start(1000);
-    t0 = Date.now();
-    $("rec-time").textContent = "0:00";
-    $("rec").setAttribute("aria-pressed", "true");
-    $("rec").setAttribute("aria-label", "Zastavit nahrávání");
-    $("rec-state").textContent = "Nahrává se. Klepněte pro zastavení.";
-    timer = setInterval(() => { $("rec-time").textContent = fmt((Date.now() - t0) / 1000); }, 250);
-    drawLevel(stream);
-  });
-
-  // kruhový ukazatel hlasitosti kolem tlačítka
-  function drawLevel(s) {
-    actx = new AudioContext();
-    const an = actx.createAnalyser();
-    an.fftSize = 512;
-    actx.createMediaStreamSource(s).connect(an);
-    const buf = new Uint8Array(an.fftSize);
-    const c = $("level"), g = c.getContext("2d");
-    const red = getComputedStyle(document.documentElement).getPropertyValue("--rec").trim();
-    let smooth = 0;
-    const tick = () => {
-      an.getByteTimeDomainData(buf);
-      let sum = 0;
-      for (const v of buf) sum += ((v - 128) / 128) ** 2;
-      smooth = Math.max(Math.sqrt(sum / buf.length) * 3, smooth * 0.9);
-      const lvl = Math.min(1, smooth);
-      g.clearRect(0, 0, c.width, c.height);
-      g.strokeStyle = red;
-      g.lineWidth = 6;
-      g.globalAlpha = 0.25 + lvl * 0.75;
-      g.beginPath();
-      g.arc(c.width / 2, c.height / 2, 66 + lvl * 34, 0, Math.PI * 2);
-      g.stroke();
-      raf = requestAnimationFrame(tick);
-    };
-    tick();
+function showText(text, info) {
+  stage = "";
+  transcript = text;
+  saved = !text;
+  $("copy").disabled = $("download").disabled = !text;
+  if (!text) {
+    const empty = el("div", "empty");
+    empty.append(el("p", null, "Služba v nahrávce nenašla žádnou řeč."));
+    out.replaceChildren(empty);
+    $("meta").hidden = true;
+    announce("Hotovo. V nahrávce nebyla nalezena žádná řeč.");
+    return;
   }
-  function clearLevel() { const c = $("level"); c.getContext("2d").clearRect(0, 0, c.width, c.height); }
+  out.replaceChildren(el("div", "transcript", text));
+  const words = text.trim().split(/\s+/).length;
+  $("meta-text").textContent = [
+    `${num(words)} ${plural(words, "slovo", "slova", "slov")}`,
+    `${num(text.length)} ${plural(text.length, "znak", "znaky", "znaků")}`,
+    PROVIDERS[info.provider],
+    `za ${fmt(info.secs)}`,
+  ].join(" · ");
+  $("meta").hidden = false;
+  announce("Přepis je hotový.");
+}
 
-  // ---------- volby ----------
-  function provider() { return document.querySelector('input[name="provider"]:checked').value; }
-  function syncProvider() {
-    const eleven = provider() === "elevenlabs";
-    $("context").disabled = eleven;
-    $("ctx-wrap").classList.toggle("note-off", eleven);
-    $("ctx-hint").textContent = eleven
-      ? "ElevenLabs volný kontext nepoužívá. Použije jen odborné výrazy níže."
-      : "Pomůže službě správně pochopit téma a jména.";
-  }
-  document.querySelectorAll('input[name="provider"]').forEach((r) => r.addEventListener("change", syncProvider));
-  syncProvider();
+// ---------- přepis ----------
+$("go").addEventListener("click", async () => {
+  if (!audio || busy) return;
+  if (!allowed) { await initAuth(); if (!allowed) return; }
+  if (transcript && !saved && !confirm("Současný přepis jste si nezkopírovali ani nestáhli. Nový přepis ho nahradí. Pokračovat?")) return;
 
-  function updateGo() { $("go").disabled = busy || !audio; }
-
-  // ---------- přepis ----------
-  function showStatus(msg, pct) {
-    $("out").innerHTML = "";
-    const p = document.createElement("div");
-    p.className = "status";
-    p.textContent = msg;
-    $("out").append(p);
-    if (pct != null) {
-      const bar = document.createElement("div");
-      bar.className = "bar";
-      bar.innerHTML = `<span style="width:${pct}%"></span>`;
-      $("out").append(bar);
-    }
-  }
-  function showError(msg) {
-    $("out").innerHTML = "";
-    const p = document.createElement("p");
-    p.className = "err";
-    p.textContent = msg;
-    $("out").append(p);
-  }
-  function showText(text) {
-    transcript = text;
-    $("out").textContent = text || "Služba v nahrávce nenašla žádnou řeč.";
-    $("copy").disabled = !text;
-    const words = text ? text.trim().split(/\s+/).length : 0;
-    $("meta").textContent = text ? `${words} slov, ${text.length} znaků` : "";
+  const a = audio, p = provider();   // nahrávka a volby platné pro tento přepis
+  busy = true; updateGo();
+  transcript = ""; saved = true; lastName = a.name;
+  $("copy").disabled = $("download").disabled = true;
+  $("meta").hidden = true;
+  if (matchMedia("(max-width: 860px)").matches) {
+    $("result").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
   }
 
-  $("go").addEventListener("click", async () => {
-    if (!password) { askPassword(); return; }
-    busy = true; updateGo();
-    transcript = ""; $("copy").disabled = true; $("meta").textContent = "";
-    const started = Date.now();
-    try {
-      const terms = $("terms").value.split(/\r?\n|,/).map((t) => t.trim()).filter(Boolean);
-      const job = await api("/api/jobs", {
+  const started = Date.now();
+  let ticker = null;
+  try {
+    showProgress("upload", "Připravuji…", 0);
+    const job = await api("/api/jobs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        provider: p,
+        language: $("lang").value,
+        context: p === "soniox" ? $("context").value : "",
+        terms: parseTerms(),
+        diarize: $("diarize").checked,
+        mime: a.blob.type || "application/octet-stream",
+        filename: a.name,
+        size: a.blob.size,
+      }),
+    });
+
+    for (let i = 0; i < job.chunks; i++) {
+      showProgress("upload", `${mb(Math.min(i * job.chunkBytes, a.blob.size))} z ${mb(a.blob.size)}`, (i / job.chunks) * 100);
+      const part = a.blob.slice(i * job.chunkBytes, (i + 1) * job.chunkBytes);
+      await api(`/api/upload?job=${job.id}&index=${i}`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          provider: provider(),
-          language: $("lang").value,
-          context: provider() === "soniox" ? $("context").value : "",
-          terms,
-          diarize: $("diarize").checked,
-          mime: audio.blob.type || "application/octet-stream",
-          filename: audio.name,
-          size: audio.blob.size,
-        }),
+        headers: { "content-type": "application/octet-stream" },
+        body: part,
       });
-
-      for (let i = 0; i < job.chunks; i++) {
-        showStatus(`Nahrávám zvuk na server… ${i + 1} z ${job.chunks}`, (i / job.chunks) * 100);
-        const part = audio.blob.slice(i * job.chunkBytes, (i + 1) * job.chunkBytes);
-        await api(`/api/upload?job=${job.id}&index=${i}`, {
-          method: "POST",
-          headers: { "content-type": "application/octet-stream" },
-          body: part,
-        });
-      }
-
-      showStatus("Předávám zvuk přepisové službě…");
-      await api(`/api/start?job=${job.id}`, { method: "POST" });
-
-      while (true) {
-        const secs = Math.round((Date.now() - started) / 1000);
-        showStatus(`Přepisuje se… ${fmt(secs)}`);
-        await new Promise((r) => setTimeout(r, 3000));
-        const st = await api(`/api/status?job=${job.id}`);
-        if (st.status === "completed") { showText(st.text); break; }
-        if (st.status === "error") throw new Error(st.error || "Přepis se nezdařil.");
-      }
-    } catch (e) {
-      showError(e.message);
-    } finally {
-      busy = false; updateGo();
     }
-  });
 
-  // ---------- kopírování ----------
-  $("copy").addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(transcript);
-    } catch {
-      const r = document.createRange();
-      r.selectNodeContents($("out"));
-      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      document.execCommand("copy");
-      s.removeAllRanges();
+    showProgress("start");
+    await api(`/api/start?job=${job.id}`, { method: "POST" });
+
+    const elapsed = () => `Probíhá ${fmt((Date.now() - started) / 1000)}`;
+    showProgress("wait", elapsed());
+    ticker = setInterval(() => {
+      const d = out.querySelector(".step.active .detail");
+      if (d) d.textContent = elapsed();
+    }, 1000);
+    while (true) {
+      await sleep(3000);
+      const st = await api(`/api/status?job=${job.id}`);
+      if (st.status === "completed") { showText(st.text, { provider: p, secs: (Date.now() - started) / 1000 }); break; }
+      if (st.status === "error") throw new Error(st.error || "Služba přepis nedokončila.");
     }
-    const b = $("copy");
-    b.textContent = "Zkopírováno";
-    b.classList.add("done");
-    setTimeout(() => { b.textContent = "Kopírovat celý přepis"; b.classList.remove("done"); }, 1800);
-  });
-})();
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    clearInterval(ticker);
+    busy = false; updateGo();
+  }
+});
+
+// ---------- kopírování a stažení ----------
+function flash(btn, text) {
+  const label = btn.querySelector("span");
+  const orig = label.textContent;
+  label.textContent = text;
+  btn.classList.add("done");
+  setTimeout(() => { label.textContent = orig; btn.classList.remove("done"); }, 1800);
+}
+
+$("copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(transcript);
+  } catch {
+    const r = document.createRange();
+    r.selectNodeContents(out.querySelector(".transcript"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    document.execCommand("copy");
+    s.removeAllRanges();
+  }
+  saved = true;
+  flash($("copy"), "Zkopírováno");
+  announce("Přepis je ve schránce.");
+});
+
+$("download").addEventListener("click", () => {
+  const base = (lastName || "prepis").replace(/\.[^.]+$/, "");
+  const url = URL.createObjectURL(new Blob([transcript + "\n"], { type: "text/plain;charset=utf-8" }));
+  const link = Object.assign(document.createElement("a"), { href: url, download: `${base}-prepis.txt` });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saved = true;
+  flash($("download"), "Staženo");
+});
+
+// Přepis se na serveru neuchovává, proto varujeme před zavřením stránky.
+addEventListener("beforeunload", (e) => {
+  if (busy || recorder?.state === "recording" || (transcript && !saved)) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+initAuth();
 </script>
 </body>
 </html>

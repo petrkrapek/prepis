@@ -3,7 +3,7 @@ import { CHUNK_BYTES, checkAuth, chunkKey, fail, json, loadJob, store, validId }
 
 // Přijme jeden kousek audia (max. 4 MB) a uloží ho do Netlify Blobs.
 export default async (req: Request) => {
-  const denied = checkAuth(req);
+  const denied = await checkAuth();
   if (denied) return denied;
 
   const url = new URL(req.url);

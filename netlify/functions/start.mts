@@ -6,7 +6,7 @@ import {
 // Poskládá nahrané kousky a předá audio zvolené službě. Nečeká na výsledek:
 // Soniox zpracuje úlohu asynchronně, ElevenLabs pošle výsledek na webhook.
 export default async (req: Request) => {
-  const denied = checkAuth(req);
+  const denied = await checkAuth();
   if (denied) return denied;
 
   const id = new URL(req.url).searchParams.get("job");

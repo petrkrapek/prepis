@@ -1,5 +1,5 @@
 import { getStore } from "@netlify/blobs";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { getUser } from "@netlify/identity";
 
 // Velikost jednoho kousku audia. Netlify má limit 6 MB na požadavek
 // (binární data se přenášejí v base64, tj. +33 %), proto 4 MB s rezervou.
@@ -51,19 +51,33 @@ export function fail(message: string, status = 400): Response {
   return json({ error: message }, status);
 }
 
-function sha(s: string): Buffer {
-  return createHash("sha256").update(s).digest();
+/**
+ * Zjistí přihlášeného uživatele (Netlify Identity, cookie nf_jwt) a ověří,
+ * že smí aplikaci používat. Vrací jeho e-mail, nebo chybovou odpověď.
+ */
+export async function currentUser(): Promise<{ email: string } | Response> {
+  const allowed = (Netlify.env.get("ALLOWED_EMAILS") ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!allowed.length) return fail("Na serveru chybí proměnná ALLOWED_EMAILS.", 500);
+
+  const user = await getUser();
+  if (!user) return fail("Nejste přihlášeni.", 401);
+
+  // Pouštíme jen účty přihlášené přes Google: Google e-mail ověřil.
+  // U účtu s heslem v Netlify Identity by e-mail ověřený být nemusel.
+  const email = user.email?.toLowerCase() ?? "";
+  if (user.provider !== "google" || !allowed.includes(email)) {
+    return fail(`Účet ${user.email || "bez e-mailu"} nemá do aplikace přístup.`, 403);
+  }
+  return { email };
 }
 
-/** Vrátí chybovou odpověď, pokud heslo nesedí; jinak null. */
-export function checkAuth(req: Request): Response | null {
-  const expected = Netlify.env.get("APP_PASSWORD");
-  if (!expected) return fail("Na serveru chybí proměnná APP_PASSWORD.", 500);
-  const given = req.headers.get("x-app-password") ?? "";
-  if (!timingSafeEqual(sha(given), sha(expected))) {
-    return fail("Heslo nesouhlasí.", 401);
-  }
-  return null;
+/** Vrátí chybovou odpověď, pokud uživatel není přihlášený nebo nemá přístup; jinak null. */
+export async function checkAuth(): Promise<Response | null> {
+  const user = await currentUser();
+  return user instanceof Response ? user : null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
