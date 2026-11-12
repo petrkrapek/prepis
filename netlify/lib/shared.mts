@@ -1,11 +1,15 @@
 import { getStore } from "@netlify/blobs";
 import { getUser } from "@netlify/identity";
+import { speakerName } from "./segments.mts";
 
 // Velikost jednoho kousku audia. Netlify má limit 6 MB na požadavek
 // (binární data se přenášejí v base64, tj. +33 %), proto 4 MB s rezervou.
 export const CHUNK_BYTES = 4_000_000;
 export const MAX_BYTES = 150 * 1024 * 1024;
 export const MAX_CONTEXT_CHARS = 8000;
+// Soniox přijme kontext nejvýš 8 000 tokenů (podle něj asi 10 000 znaků) za celý
+// objekt context. Text a výrazy proto hlídáme dohromady, s rezervou na češtinu.
+export const MAX_CONTEXT_TOTAL = 8000;
 export const MAX_TERMS = 100;
 export const MAX_TERM_CHARS = 50;
 
@@ -25,6 +29,7 @@ export interface Job {
   status: "uploading" | "processing" | "completed" | "error";
   providerId?: string;
   sonioxFileId?: string;
+  sonioxBase?: string; // adresa API v regionu, kde úloha vznikla
   error?: string;
   createdAt: number;
 }
@@ -100,6 +105,22 @@ export async function deleteAudio(job: Job): Promise<void> {
   );
 }
 
+// Region určuje, kde Soniox zpracuje a uloží zvuk i přepis. Klíč musí být
+// z projektu ve stejném regionu (EU projekt se zakládá v Soniox Console).
+const SONIOX_HOSTS: Record<string, string> = {
+  us: "https://api.soniox.com",
+  eu: "https://api.eu.soniox.com",
+  jp: "https://api.jp.soniox.com",
+  in: "https://api.in.soniox.com",
+};
+
+export function sonioxBase(): string {
+  const region = (Netlify.env.get("SONIOX_REGION") || "us").trim().toLowerCase();
+  const host = SONIOX_HOSTS[region];
+  if (!host) throw new Error(`Neznámá hodnota SONIOX_REGION „${region}“. Použijte us, eu, jp nebo in.`);
+  return `${host}/v1`;
+}
+
 export function env(name: string): string {
   const v = Netlify.env.get(name);
   if (!v) throw new Error(`Na serveru chybí proměnná ${name}.`);
@@ -127,8 +148,6 @@ export function withSpeakers(
 }
 
 function label(sp: string | null | undefined): string {
-  if (sp == null) return "";
-  const n = Number(String(sp).replace(/\D/g, ""));
-  // ElevenLabs čísluje od 0 (speaker_0), Soniox od 1.
-  return `Mluvčí ${String(sp).startsWith("speaker_") ? n + 1 : n}: `;
+  const name = speakerName(sp);
+  return name ? `${name}: ` : "";
 }

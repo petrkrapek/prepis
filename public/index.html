@@ -226,12 +226,15 @@ textarea::placeholder { color: #7f978f; }
 .more summary .chev { width: 1rem; height: 1rem; flex: none; transition: transform .15s; }
 .more[open] summary .chev { transform: rotate(90deg); }
 .more summary .more-count { margin-left: auto; font-weight: 400; font-size: .875rem; color: var(--d-muted); }
+.more summary .more-count.over { color: #ff9a94; font-weight: 700; }
 .field { margin-top: .9rem; }
 .field-head { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; margin-bottom: .35rem; }
 .field-head label { font-weight: 500; }
 .count { font-size: .875rem; color: var(--d-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .count.over { color: #ff9a94; font-weight: 700; }
 .field-hint { margin: .35rem 0 0; font-size: .875rem; color: var(--d-muted); }
+.field-hint.total { margin-top: .9rem; font-variant-numeric: tabular-nums; }
+.field-hint.over { color: #ff9a94; font-weight: 700; }
 .field.off textarea { opacity: .45; }
 
 .go {
@@ -284,13 +287,19 @@ textarea::placeholder { color: #7f978f; }
 .turn p { margin: 0; }
 .turn .who {
   font-family: var(--ui); font-size: .875rem; font-weight: 700; color: var(--ink-muted);
-  padding-top: .3rem; text-align: right;
+  padding-top: .3rem; text-align: right; display: grid; align-content: start;
 }
+.turn .when { font-weight: 400; font-variant-numeric: tabular-nums; }
 .turn + .turn .who.same { visibility: hidden; }
 @media (max-width: 640px) {
   .turn { grid-template-columns: 1fr; gap: .1rem; }
-  .turn .who { text-align: left; padding-top: 0; }
+  .turn .who { text-align: left; padding-top: 0; display: flex; gap: .6rem; }
   .turn + .turn .who.same { display: none; }
+}
+/* Místa, kde si služba nebyla jistá: jemně podbarvená, ať je oko najde při kontrole. */
+mark.low {
+  color: inherit; background: rgb(240 82 74 / .13); border-bottom: 1.5px dotted var(--lamp);
+  border-radius: 2px; padding: 0 .06em;
 }
 .fail { max-width: 34rem; display: grid; gap: .6rem; justify-items: start; padding-top: .5rem; }
 .fail h3 { margin: 0; font-size: 1.125rem; color: var(--fail); }
@@ -410,7 +419,6 @@ textarea::placeholder { color: #7f978f; }
           <div class="field" id="ctx-field">
             <div class="field-head">
               <label for="context">Kontext</label>
-              <span class="count" id="ctx-count" aria-hidden="true">0 / 8 000</span>
             </div>
             <textarea id="context" rows="4" maxlength="8000" aria-describedby="ctx-hint" placeholder="O čem nahrávka je, kdo v ní mluví, jaká jména a zkratky zazní"></textarea>
             <p class="field-hint" id="ctx-hint">Pomůže správně zachytit téma, jména a zkratky.</p>
@@ -423,6 +431,7 @@ textarea::placeholder { color: #7f978f; }
             <textarea id="terms" rows="3" aria-describedby="terms-hint" placeholder="Každý výraz na nový řádek, např.&#10;NIS Chameleon&#10;chemostacionář"></textarea>
             <p class="field-hint" id="terms-hint">Služba je pak napíše přesně takhle. Nejvýš 100 výrazů po 50 znacích.</p>
           </div>
+          <p class="field-hint total" id="ctx-total" aria-live="polite"></p>
         </details>
       </div>
 
@@ -466,6 +475,8 @@ const $ = (id) => document.getElementById(id);
 const MAX_BYTES = 150 * 1024 * 1024;
 const WAVE_MAX_BYTES = 25 * 1024 * 1024;   // větší soubory nedekódujeme, stopa by stála moc paměti
 const MAX_TERMS = 100;
+const MAX_TERM_CHARS = 50;
+const CONTEXT_LIMIT = 8000;                 // kontext a výrazy dohromady, víc Soniox nepřijme
 const PROVIDERS = { soniox: "Soniox", elevenlabs: "ElevenLabs" };
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const narrow = () => matchMedia("(max-width: 900px)").matches;
@@ -820,20 +831,33 @@ function syncProvider() {
   $("ctx-field").classList.toggle("off", eleven);
   $("prov-hint").textContent = eleven ? "Využije jen odborné výrazy, kontext přeskočí." : "Využije kontext i odborné výrazy.";
   $("ctx-hint").textContent = eleven ? "ElevenLabs kontext nepoužívá." : "Pomůže správně zachytit téma, jména a zkratky.";
+  syncCounts();
 }
 document.querySelectorAll('input[name="provider"]').forEach((r) => r.addEventListener("change", syncProvider));
 syncProvider();
 
 function parseTerms() { return $("terms").value.split(/\r?\n|,/).map((t) => t.trim()).filter(Boolean); }
+// Kolik znaků kontextu odejde Sonioxu. Počítá stejně jako server: výrazy bez duplicit, nejvýš 100 po 50 znacích.
+function contextTotal() {
+  const terms = [...new Set(parseTerms())].slice(0, MAX_TERMS).reduce((n, t) => n + Math.min(t.length, MAX_TERM_CHARS), 0);
+  return (provider() === "soniox" ? $("context").value.trim().length : 0) + terms;
+}
+function contextTooLong() { return contextTotal() > CONTEXT_LIMIT; }
 function syncCounts() {
-  const ctx = $("context").value.length, n = parseTerms().length;
-  $("ctx-count").textContent = `${num(ctx)} / ${num(8000)}`;
+  const ctx = $("context").value.length, n = parseTerms().length, total = contextTotal(), over = total > CONTEXT_LIMIT;
   $("terms-count").textContent = `${n} / ${MAX_TERMS}`;
   $("terms-count").classList.toggle("over", n > MAX_TERMS);
+  $("ctx-total").textContent = over
+    ? `Kontext a výrazy mají dohromady ${num(total)} znaků. Soniox jich přijme nejvýš ${num(CONTEXT_LIMIT)}, zkraťte je.`
+    : `Kontext a výrazy dohromady: ${num(total)} z ${num(CONTEXT_LIMIT)} znaků.`;
+  $("ctx-total").classList.toggle("over", over);
   const parts = [];
   if (ctx) parts.push("kontext");
   if (n) parts.push(`${n} ${plural(n, "výraz", "výrazy", "výrazů")}`);
-  $("more-count").textContent = parts.length ? parts.join(" a ") : "nevyplněno";
+  $("more-count").textContent = over ? "moc dlouhé" : parts.length ? parts.join(" a ") : "nevyplněno";
+  $("more-count").classList.toggle("over", over);
+  if (over) $("more").open = true;
+  updateGo();
 }
 $("context").addEventListener("input", syncCounts);
 $("terms").addEventListener("input", syncCounts);
@@ -846,11 +870,13 @@ $("more").addEventListener("toggle", () => {
 });
 
 function updateGo() {
-  const recording = recorder?.state === "recording";
-  $("go").disabled = busy || !audio || recording;
+  const recording = recorder?.state === "recording", tooLong = contextTooLong();
+  $("go").disabled = busy || !audio || recording || tooLong;
   $("go").classList.toggle("working", busy);
   if (!busy) $("go-label").textContent = "Přepsat";
-  $("go-hint").hidden = busy || !!audio;
+  const hint = busy ? "" : !audio ? "Nejdřív nahrajte hlas nebo vyberte soubor." : tooLong ? "Zkraťte kontext a odborné výrazy, jsou na Soniox moc dlouhé." : "";
+  $("go-hint").textContent = hint;
+  $("go-hint").hidden = !hint;
   $("rec").disabled = busy;
   $("file").disabled = busy;
   $("clear").hidden = !audio || busy || recording;
@@ -882,6 +908,32 @@ function renderTranscript(text) {
   return wrap;
 }
 
+// Repliky ze Sonioxu: mluvčí a čas na okraji, nejistá místa podtržená.
+const clock = (s) => s >= 3600
+  ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
+  : fmt(s);
+function renderSegments(segments) {
+  const wrap = el("div", "transcript");
+  let low = 0;
+  for (const s of segments) {
+    const p = el("p");
+    for (const part of s.parts) {
+      if (!part.low) { p.append(part.t); continue; }
+      const m = el("mark", "low", part.t);
+      m.title = "Tady si služba nebyla jistá";
+      p.append(m);
+      low++;
+    }
+    if (!s.speaker) { wrap.append(p); continue; }
+    const who = el("div", "who");
+    who.append(el("span", null, s.speaker), el("span", "when", clock(s.start)));
+    const turn = el("div", "turn");
+    turn.append(who, p);
+    wrap.append(turn);
+  }
+  return { node: wrap, low };
+}
+
 function showError(msg) {
   const box = el("div", "fail");
   box.append(el("h3", null, "Přepis se nepodařil"), el("p", null, msg));
@@ -906,11 +958,19 @@ function showText(text, info) {
     announce("Hotovo. V nahrávce nebyla nalezena žádná řeč.");
     return;
   }
-  out.replaceChildren(renderTranscript(text));
+  let low = 0;
+  if (info.segments?.length) {
+    const r = renderSegments(info.segments);
+    out.replaceChildren(r.node);
+    low = r.low;
+  } else {
+    out.replaceChildren(renderTranscript(text));
+  }
   out.scrollTop = 0;
   const words = text.trim().split(/\s+/).length;
   const count = `${num(words)} ${plural(words, "slovo", "slova", "slov")}`;
-  $("sheet-meta").textContent = `${info.name}. ${count}, přepsáno službou ${PROVIDERS[info.provider]} za ${fmt(info.secs)}.`;
+  const check = low ? ` ${plural(low, "Jedno místo ke kontrole je podtržené.", `${low} místa ke kontrole jsou podtržená.`, `${low} míst ke kontrole je podtržených.`)}` : "";
+  $("sheet-meta").textContent = `${info.name}. ${count}, přepsáno službou ${PROVIDERS[info.provider]} za ${fmt(info.secs)}.${check}`;
   $("sheet-foot").hidden = false;
   setStatus(`Hotovo, ${count} na archu.`);
   announce("Přepis je hotový.");
@@ -985,7 +1045,7 @@ $("go").addEventListener("click", async () => {
     while (true) {
       await sleep(3000);
       const st = await api(`/api/status?job=${job.id}`);
-      if (st.status === "completed") { showText(st.text, { name: a.name, provider: p, secs: (Date.now() - started) / 1000 }); break; }
+      if (st.status === "completed") { showText(st.text, { name: a.name, provider: p, secs: (Date.now() - started) / 1000, segments: st.segments }); break; }
       if (st.status === "error") throw new Error(st.error || "Služba přepis nedokončila.");
     }
   } catch (e) {

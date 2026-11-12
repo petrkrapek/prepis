@@ -1,6 +1,6 @@
 import type { Config } from "@netlify/functions";
 import {
-  checkAuth, chunkKey, deleteAudio, env, fail, json, loadJob, saveJob, store, validId, type Job,
+  checkAuth, chunkKey, deleteAudio, env, fail, json, loadJob, saveJob, sonioxBase, store, validId, type Job,
 } from "../lib/shared.mts";
 
 // Poskládá nahrané kousky a předá audio zvolené službě. Nečeká na výsledek:
@@ -41,17 +41,19 @@ export default async (req: Request) => {
 };
 
 async function startSoniox(job: Job, audio: Blob) {
+  const base = sonioxBase();
+  job.sonioxBase = base;
   const auth = { Authorization: `Bearer ${env("SONIOX_API_KEY")}` };
 
   const fd = new FormData();
   fd.append("file", audio, job.filename);
-  const up = await fetch("https://api.soniox.com/v1/files", { method: "POST", headers: auth, body: fd });
+  const up = await fetch(`${base}/files`, { method: "POST", headers: auth, body: fd });
   if (!up.ok) throw new Error(`Soniox odmítl soubor (${up.status}): ${await up.text()}`);
   const file = (await up.json()) as { id: string };
   job.sonioxFileId = file.id;
 
   const body: Record<string, unknown> = {
-    model: Netlify.env.get("SONIOX_MODEL") || "stt-async-v4",
+    model: Netlify.env.get("SONIOX_MODEL") || "stt-async-v6",
     file_id: file.id,
     enable_speaker_diarization: job.diarize,
     client_reference_id: job.id,
@@ -62,13 +64,20 @@ async function startSoniox(job: Job, audio: Blob) {
   if (job.terms.length) context.terms = job.terms;
   if (Object.keys(context).length) body.context = context;
 
-  const tr = await fetch("https://api.soniox.com/v1/transcriptions", {
-    method: "POST",
-    headers: { ...auth, "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!tr.ok) throw new Error(`Soniox odmítl přepis (${tr.status}): ${await tr.text()}`);
-  job.providerId = ((await tr.json()) as { id: string }).id;
+  try {
+    const tr = await fetch(`${base}/transcriptions`, {
+      method: "POST",
+      headers: { ...auth, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!tr.ok) throw new Error(`Soniox odmítl přepis (${tr.status}): ${await tr.text()}`);
+    job.providerId = ((await tr.json()) as { id: string }).id;
+  } catch (e) {
+    // Přepis nevznikl. Nahraný soubor by jinak u Sonioxu zůstal až 30 dní.
+    await fetch(`${base}/files/${file.id}`, { method: "DELETE", headers: auth }).catch(() => {});
+    job.sonioxFileId = undefined;
+    throw e;
+  }
 }
 
 async function startElevenLabs(job: Job, audio: Blob) {

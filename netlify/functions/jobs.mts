@@ -1,7 +1,7 @@
 import type { Config } from "@netlify/functions";
 import { randomUUID } from "node:crypto";
 import {
-  CHUNK_BYTES, MAX_BYTES, MAX_CONTEXT_CHARS, MAX_TERMS, MAX_TERM_CHARS,
+  CHUNK_BYTES, MAX_BYTES, MAX_CONTEXT_CHARS, MAX_CONTEXT_TOTAL, MAX_TERMS, MAX_TERM_CHARS,
   checkAuth, fail, json, saveJob, type Job,
 } from "../lib/shared.mts";
 
@@ -27,6 +27,10 @@ export default async (req: Request) => {
   const terms = [...new Set(rawTerms.filter(Boolean))]
     .slice(0, MAX_TERMS)
     .map((t) => t.slice(0, MAX_TERM_CHARS));
+  const total = context.length + terms.reduce((n, t) => n + t.length, 0);
+  if (provider === "soniox" && total > MAX_CONTEXT_TOTAL) {
+    return fail(`Kontext a odborné výrazy mají dohromady ${total} znaků, Soniox jich přijme nejvýš ${MAX_CONTEXT_TOTAL}. Zkraťte je.`);
+  }
 
   const job: Job = {
     id: randomUUID(),
