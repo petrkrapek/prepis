@@ -301,6 +301,18 @@ mark.low {
   color: inherit; background: rgb(240 82 74 / .13); border-bottom: 1.5px dotted var(--lamp);
   border-radius: 2px; padding: 0 .06em;
 }
+/* Přepínač mezi opraveným a původním textem a hlášení o korektuře. */
+.versions { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0 2.75rem 1rem; }
+.versions .btn[aria-pressed="true"] { background: var(--btn-ink-bg); border-color: var(--btn-ink-bg); color: var(--btn-ink-fg); }
+.fix-note {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0 2.75rem 1rem; padding: .7rem .9rem;
+  border-left: 3px solid var(--fail); border-radius: 4px; background: rgb(240 82 74 / .1); font-size: .9375rem;
+}
+.fix-note p { margin: 0; flex: 1 1 14rem; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .versions { padding: 0 1.25rem .75rem; }
+  .fix-note { margin: 0 1.25rem .75rem; }
+}
 .fail { max-width: 34rem; display: grid; gap: .6rem; justify-items: start; padding-top: .5rem; }
 .fail h3 { margin: 0; font-size: 1.125rem; color: var(--fail); }
 .fail p { margin: 0; }
@@ -410,6 +422,20 @@ mark.low {
           </label>
         </div>
 
+        <div class="row" id="fix-row" hidden>
+          <span class="row-label">Korektura</span>
+          <label class="switch">
+            <input type="checkbox" id="fix" role="switch">
+            <span class="track" aria-hidden="true"></span>
+            <span>Opravit přepis pomocí AI</span>
+          </label>
+        </div>
+        <div class="row" id="tpl-row" hidden>
+          <label class="row-label" for="tpl">Šablona</label>
+          <select id="tpl" aria-describedby="tpl-hint"></select>
+        </div>
+        <p class="row-hint" id="tpl-hint" hidden></p>
+
         <details class="more" id="more">
           <summary>
             <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
@@ -456,10 +482,18 @@ mark.low {
           </button>
         </div>
       </header>
+      <div class="versions" id="versions" role="group" aria-label="Verze textu" hidden>
+        <button class="btn" id="v-fixed" type="button" aria-pressed="true">Po korektuře</button>
+        <button class="btn" id="v-orig" type="button" aria-pressed="false">Původní přepis</button>
+      </div>
+      <div class="fix-note" id="fix-note" role="alert" hidden>
+        <p id="fix-msg"></p>
+        <button class="btn" id="fix-retry" type="button">Zkusit znovu</button>
+      </div>
       <div class="sheet-body" id="out">
         <p class="note">Nahrajte hlas nebo vyberte soubor a stiskněte Přepsat. Text se napíše sem.</p>
       </div>
-      <p class="sheet-foot" id="sheet-foot" hidden>Přepis se na serveru neukládá. Než stránku zavřete, zkopírujte si ho nebo stáhněte.</p>
+      <p class="sheet-foot" id="sheet-foot" hidden></p>
     </section>
   </div>
 </div>
@@ -484,7 +518,13 @@ const narrow = () => matchMedia("(max-width: 900px)").matches;
 let audio = null;            // { blob, name, url, secs }
 let recorder = null, stream = null, chunks = [], t0 = 0, clockTimer = null, levelRaf = null, actx = null;
 let busy = false, allowed = false;
-let transcript = "", saved = true, lastName = "";
+let transcript = "", saved = true, lastName = "";   // transcript = text, který je právě na archu
+let sheet = null;            // { text, segments, info, fixed, template } – původní přepis a jeho korektura
+let view = "orig";           // která verze je na archu: "orig" | "fixed"
+let templates = [];          // šablony AI korektury ze serveru; prázdné = korektura není zapnutá
+let lastFix = null;          // volby poslední korektury pro tlačítko Zkusit znovu
+const FIX_CHARS = 3000;      // délka jedné části pro korekturu; delší by funkce nestihla do časového limitu
+const FIX_PARALLEL = 3;
 
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const num = (n) => n.toLocaleString("cs-CZ");
@@ -653,7 +693,8 @@ async function initAuth() {
   $("who").textContent = user.email || "";
   $("logout").title = user.email ? `Odhlásit ${user.email}` : "";
   try {
-    await api("/api/me");
+    const me = await api("/api/me");
+    setupFix(me.correction?.templates || []);
     openApp();
   } catch (e) {
     if (!e.auth) gate("login", `Nepodařilo se ověřit přístup: ${e.message}`);
@@ -673,7 +714,13 @@ async function api(path, opts = {}) {
     gate(expired ? "login" : "denied", msg);
     throw Object.assign(new Error(msg), { auth: true });
   }
-  if (!res.ok) throw new Error(data.error || `Server vrátil chybu ${res.status}.`);
+  if (!res.ok) {
+    // split: zkusit s kratším textem (i když funkci ukončil časový limit Netlify), busy: zkusit za chvíli.
+    throw Object.assign(new Error(data.error || `Server vrátil chybu ${res.status}.`), {
+      split: !!data.split || (!data.error && (res.status === 502 || res.status === 504)),
+      busy: !!data.busy,
+    });
+  }
   return data;
 }
 
@@ -826,13 +873,47 @@ function listen(s) {
 // ---------- volby ----------
 function provider() { return document.querySelector('input[name="provider"]:checked').value; }
 function syncProvider() {
-  const eleven = provider() === "elevenlabs";
-  $("context").disabled = eleven;
-  $("ctx-field").classList.toggle("off", eleven);
+  const eleven = provider() === "elevenlabs", fix = fixOn();
+  // Kontext umí využít Soniox a AI korektura. ElevenLabs sám o sobě ne.
+  $("context").disabled = eleven && !fix;
+  $("ctx-field").classList.toggle("off", eleven && !fix);
   $("prov-hint").textContent = eleven ? "Využije jen odborné výrazy, kontext přeskočí." : "Využije kontext i odborné výrazy.";
-  $("ctx-hint").textContent = eleven ? "ElevenLabs kontext nepoužívá." : "Pomůže správně zachytit téma, jména a zkratky.";
+  $("ctx-hint").textContent = !eleven ? "Pomůže správně zachytit téma, jména a zkratky."
+    : fix ? "ElevenLabs kontext nepoužívá, využije ho jen AI korektura." : "ElevenLabs kontext nepoužívá.";
   syncCounts();
 }
+
+// ---------- AI korektura: přepínač a šablony ----------
+function fixOn() { return templates.length > 0 && $("fix").checked; }
+function syncFix() {
+  const on = fixOn(), t = templates.find((x) => x.id === $("tpl").value);
+  $("tpl-row").hidden = !on;
+  $("tpl-hint").hidden = !on || !t;
+  $("tpl-hint").textContent = t ? t.hint : "";
+  syncProvider();
+}
+// Server pošle šablony jen tehdy, když má klíč k Anthropic. Jinak se korektura vůbec nenabídne.
+function setupFix(list) {
+  templates = list;
+  $("fix-row").hidden = !list.length;
+  $("tpl").replaceChildren(...list.map((t) => Object.assign(el("option", null, t.name), { value: t.id })));
+  // Zapnutí a šablonu si pamatujeme jen v tomto prohlížeči.
+  try {
+    $("fix").checked = localStorage.getItem("prepis-korektura") === "1";
+    const tpl = localStorage.getItem("prepis-sablona");
+    if (list.some((t) => t.id === tpl)) $("tpl").value = tpl;
+  } catch {}
+  syncFix();
+}
+function rememberFix() {
+  try {
+    localStorage.setItem("prepis-korektura", $("fix").checked ? "1" : "0");
+    localStorage.setItem("prepis-sablona", $("tpl").value);
+  } catch {}
+  syncFix();
+}
+$("fix").addEventListener("change", rememberFix);
+$("tpl").addEventListener("change", rememberFix);
 document.querySelectorAll('input[name="provider"]').forEach((r) => r.addEventListener("change", syncProvider));
 syncProvider();
 
@@ -840,7 +921,7 @@ function parseTerms() { return $("terms").value.split(/\r?\n|,/).map((t) => t.tr
 // Kolik znaků kontextu odejde Sonioxu. Počítá stejně jako server: výrazy bez duplicit, nejvýš 100 po 50 znacích.
 function contextTotal() {
   const terms = [...new Set(parseTerms())].slice(0, MAX_TERMS).reduce((n, t) => n + Math.min(t.length, MAX_TERM_CHARS), 0);
-  return (provider() === "soniox" ? $("context").value.trim().length : 0) + terms;
+  return (provider() === "soniox" ? $("context").value.trim().length : 0) + terms;   // limit je Sonioxu, korektura ho nemá
 }
 function contextTooLong() { return contextTotal() > CONTEXT_LIMIT; }
 function syncCounts() {
@@ -880,6 +961,7 @@ function updateGo() {
   $("rec").disabled = busy;
   $("file").disabled = busy;
   $("clear").hidden = !audio || busy || recording;
+  $("fix-retry").disabled = busy;
   document.querySelectorAll('input[name="src"]').forEach((r) => { r.disabled = busy || recording; });
 }
 // Stav ukazujeme u pásky i přímo na tlačítku, kam se uživatel právě dívá.
@@ -948,34 +1030,181 @@ function showError(msg) {
   announce(`Přepis se nepodařil. ${msg}`);
 }
 
+const wordCount = (text) => {
+  const n = text.trim().split(/\s+/).length;
+  return `${num(n)} ${plural(n, "slovo", "slova", "slov")}`;
+};
+
+// Vykreslí na arch zvolenou verzi: původní přepis, nebo text po korektuře.
+// Kopírování a stažení berou vždy tu verzi, která je vidět.
+function paint() {
+  const s = sheet, fixed = view === "fixed" && !!s.fixed;
+  transcript = fixed ? s.fixed : s.text;
+  let low = 0;
+  if (fixed || !s.segments?.length) {
+    out.replaceChildren(renderTranscript(transcript));
+  } else {
+    const r = renderSegments(s.segments);
+    out.replaceChildren(r.node);
+    low = r.low;
+  }
+  out.scrollTop = 0;
+  $("versions").hidden = !s.fixed;
+  $("v-fixed").setAttribute("aria-pressed", String(fixed));
+  $("v-orig").setAttribute("aria-pressed", String(!fixed));
+  const check = low ? ` ${plural(low, "Jedno místo ke kontrole je podtržené.", `${low} místa ke kontrole jsou podtržená.`, `${low} míst ke kontrole je podtržených.`)}` : "";
+  const how = fixed ? ` Opraveno AI korekturou, šablona ${s.template}.` : "";
+  $("sheet-meta").textContent = `${s.info.name}. ${wordCount(transcript)}, přepsáno službou ${PROVIDERS[s.info.provider]} za ${fmt(s.info.secs)}.${how}${check}`;
+  $("sheet-foot").textContent = (fixed ? "Korektura může změnit formulace. Důležitá místa porovnejte s původním přepisem. " : "")
+    + "Přepis se na serveru neukládá. Než stránku zavřete, zkopírujte si ho nebo stáhněte.";
+  $("sheet-foot").hidden = false;
+}
+function setView(v) {
+  if (!sheet || view === v) return;
+  view = v;
+  paint();
+  announce(v === "fixed" ? "Na archu je text po korektuře." : "Na archu je původní přepis.");
+}
+$("v-fixed").addEventListener("click", () => setView("fixed"));
+$("v-orig").addEventListener("click", () => setView("orig"));
+
+function clearSheet() {
+  sheet = null; view = "orig"; transcript = ""; saved = true; lastFix = null;
+  $("copy").disabled = $("download").disabled = true;
+  $("versions").hidden = $("fix-note").hidden = $("sheet-foot").hidden = true;
+}
+
 function showText(text, info) {
-  transcript = text;
-  saved = !text;
-  $("copy").disabled = $("download").disabled = !text;
   if (!text) {
     sheetNote("Služba v nahrávce nenašla žádnou řeč. Zkontrolujte, že je slyšet, a zkuste to znovu.");
     setStatus("Hotovo, ale bez textu.");
     announce("Hotovo. V nahrávce nebyla nalezena žádná řeč.");
     return;
   }
-  let low = 0;
-  if (info.segments?.length) {
-    const r = renderSegments(info.segments);
-    out.replaceChildren(r.node);
-    low = r.low;
-  } else {
-    out.replaceChildren(renderTranscript(text));
-  }
-  out.scrollTop = 0;
-  const words = text.trim().split(/\s+/).length;
-  const count = `${num(words)} ${plural(words, "slovo", "slova", "slov")}`;
-  const check = low ? ` ${plural(low, "Jedno místo ke kontrole je podtržené.", `${low} místa ke kontrole jsou podtržená.`, `${low} míst ke kontrole je podtržených.`)}` : "";
-  $("sheet-meta").textContent = `${info.name}. ${count}, přepsáno službou ${PROVIDERS[info.provider]} za ${fmt(info.secs)}.${check}`;
-  $("sheet-foot").hidden = false;
-  setStatus(`Hotovo, ${count} na archu.`);
+  sheet = { text, segments: info.segments, info, fixed: "", template: "" };
+  view = "orig";
+  saved = false;
+  $("copy").disabled = $("download").disabled = false;
+  paint();
+  setStatus(`Hotovo, ${wordCount(text)} na archu.`);
   announce("Přepis je hotový.");
   if (narrow()) $("result").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
+
+// ---------- AI korektura ----------
+// Rozdělí přepis na části do max znaků: po odstavcích (replikách), dlouhý odstavec po větách.
+// Pokračování rozdělené repliky dostane stejné označení mluvčího, ať se na archu neztratí.
+function splitText(text, max) {
+  const units = [];
+  for (const para of text.split(/\n{2,}/)) {
+    const p = para.trim();
+    if (!p) continue;
+    if (p.length <= max) { units.push(p); continue; }
+    const m = /^(Mluvčí \d+: )([\s\S]*)$/.exec(p);
+    const label = m ? m[1] : "", room = max - label.length;
+    let buf = "";
+    const flush = () => { if (buf) units.push(label + buf); buf = ""; };
+    for (let s of (m ? m[2] : p).split(/(?<=[.!?…])\s+/)) {
+      while (s.length > room) {           // věta bez interpunkce delší než část: dělíme na mezeře
+        flush();
+        let cut = s.lastIndexOf(" ", room);
+        if (cut <= 0) cut = room;
+        units.push(label + s.slice(0, cut));
+        s = s.slice(cut).trim();
+      }
+      if (buf && buf.length + 1 + s.length > room) flush();
+      buf += (buf ? " " : "") + s;
+    }
+    flush();
+  }
+  const parts = [];
+  let cur = "";
+  for (const u of units) {
+    if (cur && cur.length + 2 + u.length > max) { parts.push(cur); cur = ""; }
+    cur += (cur ? "\n\n" : "") + u;
+  }
+  if (cur) parts.push(cur);
+  return parts;
+}
+
+// Opraví jednu část. Když ji server nestihne, rozdělí ji napůl; když je služba přetížená, chvíli počká.
+async function fixPart(text, before, o, tries = 0) {
+  try {
+    const r = await api("/api/correct", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ template: o.template, language: o.language, context: o.context, terms: o.terms, text, before }),
+    });
+    return r.text;
+  } catch (e) {
+    if (e.busy && tries < 2) { await sleep(4000 * (tries + 1)); return fixPart(text, before, o, tries + 1); }
+    if (!e.split || text.length < 600) throw e;
+    const done = [];
+    let prev = before;
+    for (const half of splitText(text, Math.ceil(text.length / 2) + 50)) {
+      done.push(await fixPart(half, prev, o));
+      prev = half.slice(-600);
+    }
+    return done.join("\n\n");
+  }
+}
+
+// Pošle přepis z archu po částech na korekturu. Původní přepis zůstává, jde se k němu přepnout.
+async function runFix(o) {
+  const s = sheet;
+  if (!s || busy) return;
+  lastFix = o;
+  busy = true;
+  setLamp(true);
+  updateGo();
+  $("fix-note").hidden = true;
+  startScan();
+  const parts = splitText(s.text, FIX_CHARS), fixed = new Array(parts.length);
+  let done = 0, next = 0, failed = false;
+  const tick = () => {
+    const pct = Math.round((done / parts.length) * 100);
+    working(`AI opravuje přepis, ${pct} %`, `Korektura ${pct} %`);
+  };
+  tick();
+  announce("AI opravuje přepis.");
+  const worker = async () => {
+    while (next < parts.length && !failed) {
+      const i = next++;
+      try { fixed[i] = await fixPart(parts[i], i ? parts[i - 1].slice(-600) : "", o); }
+      catch (e) { failed = true; throw e; }
+      done++;
+      tick();
+    }
+  };
+  try {
+    await Promise.all(Array.from({ length: Math.min(FIX_PARALLEL, parts.length) }, worker));
+    s.fixed = fixed.join("\n\n");
+    s.template = o.name;
+    view = "fixed";
+    saved = false;
+    paint();
+    setStatus(`Hotovo, opravený text je na archu (${wordCount(s.fixed)}).`);
+    announce("Korektura je hotová. Na archu je opravený text, původní přepis zůstává k dispozici.");
+  } catch (e) {
+    if (!e.auth) {
+      $("fix-msg").textContent = `Korektura se nepodařila: ${e.message} Na archu zůstává původní přepis.`;
+      $("fix-note").hidden = false;
+      setStatus("Přepis je hotový, korektura se nepodařila.");
+      announce(`Korektura se nepodařila. ${e.message}`);
+    }
+  } finally {
+    stopScan();
+    busy = false;
+    setLamp(false);
+    tape.mode = audio ? "clip" : "idle";
+    drawTape();
+    updateGo();
+  }
+}
+$("fix-retry").addEventListener("click", async () => {
+  if (!allowed) { await initAuth(); if (!allowed) return; }
+  if (lastFix) runFix(lastFix);
+});
 
 // ---------- přepis ----------
 $("go").addEventListener("click", async () => {
@@ -984,12 +1213,15 @@ $("go").addEventListener("click", async () => {
   if (transcript && !saved && !confirm("Současný přepis jste si nezkopírovali ani nestáhli. Nový přepis ho nahradí. Pokračovat?")) return;
 
   const a = audio, p = provider(), name = PROVIDERS[p];   // nahrávka a volby platné pro tento přepis
+  const tpl = templates.find((t) => t.id === $("tpl").value);
+  const fix = fixOn() && tpl
+    ? { template: tpl.id, name: tpl.name, language: $("lang").value, context: $("context").value.trim(), terms: parseTerms() }
+    : null;
   busy = true;
   setLamp(true);
   updateGo();
-  transcript = ""; saved = true; lastName = a.name;
-  $("copy").disabled = $("download").disabled = true;
-  $("sheet-foot").hidden = true;
+  clearSheet();
+  lastName = a.name;
   $("sheet-meta").textContent = a.name;
   sheetNote(`Text se napíše sem, jakmile ho ${name} přepíše. Stránku nechte otevřenou.`);
 
@@ -1059,6 +1291,7 @@ $("go").addEventListener("click", async () => {
     drawTape();
     updateGo();
   }
+  if (fix && sheet && allowed) await runFix(fix);
 });
 
 // ---------- kopírování a stažení ----------
