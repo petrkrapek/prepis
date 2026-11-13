@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@netlify/blobs": "^11.1.7",
     "@netlify/functions": "^3.0.0",
     "@netlify/identity": "^2.0.1"

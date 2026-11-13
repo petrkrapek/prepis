@@ -12,6 +12,8 @@ Do aplikace se přihlašuje účtem Google přes Netlify Identity. Pustí jen e-
    - **ElevenLabs:** požadavek se pošle s `webhook=true` a výsledek přijde na `/api/elevenlabs-webhook`.
 3. Prohlížeč se každé 3 s ptá `/api/status`. Hotový přepis se vydá jednou a poté se smaže ze serveru (u Sonioxu se smaže i soubor a přepis na jejich straně).
 
+4. Je-li zapnutá **AI korektura**, prohlížeč pak pošle hotový přepis po částech na `/api/correct` (viz níže).
+
 Každá funkce kromě webhooku si přes `@netlify/identity` ověří přihlášeného uživatele (cookie `nf_jwt`). Projde jen účet přihlášený přes Google, jehož e-mail je v `ALLOWED_EMAILS`. Účty s heslem neprojdou, protože jejich e-mail nemusí být ověřený.
 
 Úloha se smaže hned, jak prohlížeč dostane přepis nebo chybu. Funkce `cleanup` každou hodinu (v 17. minutě UTC) smaže úlohy starší než 6 hodin i s jejich daty u Sonioxu, osiřelé kousky zvuku a cokoli v původním úložišti v USA (`us-east-2`), kam se ukládalo do 12. 11. 2026. Co smazala, zapíše do logu funkce.
@@ -30,6 +32,8 @@ Každá funkce kromě webhooku si přes `@netlify/identity` ověří přihláše
 | `ELEVENLABS_WEBHOOK_SECRET` | pro ElevenLabs | Tajemství webhooku z nastavení ElevenLabs |
 | `ELEVENLABS_WEBHOOK_ID` | ne | ID webhooku, pokud jich máte víc |
 | `ELEVENLABS_MODEL` | ne | Výchozí `scribe_v2` |
+| `ANTHROPIC_API_KEY` | pro AI korekturu | API klíč z Claude Console. Bez něj se korektura v aplikaci vůbec nenabídne |
+| `ANTHROPIC_MODEL` | ne | Model pro korekturu, výchozí `claude-opus-5-5` |
 
 ## Nastavení přihlášení (Netlify Identity)
 
@@ -74,6 +78,30 @@ Lokálně: `npm run dev`. Přihlášení přes Netlify Identity lokálně nefung
 - Volný kontext využívá jen Soniox. ElevenLabs použije jen odborné výrazy (keyterms).
 - Kontext a odborné výrazy mají pro Soniox dohromady nejvýš 8 000 znaků. Soniox přijme 8 000 tokenů, u češtiny necháváme rezervu.
 - Soniox zpracuje nejvýš 300 minut zvuku na jeden soubor.
+
+## AI korektura
+
+Hotový přepis může opravit Claude (Anthropic): pravopis, interpunkci, členění do odstavců a špatně rozpoznaná slova. Korektura se zapíná přepínačem **Korektura** pod volbou mluvčích a ve výchozím stavu je vypnutá. Zapnutí i šablonu si prohlížeč pamatuje. Přepínač se zobrazí jen tehdy, když je na Netlify nastavený `ANTHROPIC_API_KEY`; smazáním proměnné se funkce vypne pro všechny.
+
+Šablona určuje, jak se text upraví:
+
+| Šablona | Co dělá |
+|---|---|
+| Obecná | Opraví chyby, styl řeči nechá být |
+| Schůzka | Věcný záznam bez vaty, důraz na jména, čísla, termíny a úkoly |
+| Rozhovor | Otázky a odpovědi v odstavcích, osobitý projev zůstane |
+| Diktát | Provede vyslovenou interpunkci („tečka“, „nový odstavec“) a opravy mluvčího |
+| Přednáška | Souvislý výklad v odstavcích po myšlenkách |
+
+Šablony jsou v `netlify/lib/correction.mts` (pole `TEMPLATES`). Novou přidáte dalším záznamem s `id`, názvem, popiskem a pokyny pro model; stránka si seznam načte sama.
+
+Jak to běží:
+
+- Prohlížeč rozdělí přepis na části po zhruba 3 000 znacích (`FIX_CHARS` v `public/index.html`) a posílá je na `/api/correct`, nejvýš tři najednou. Důvodem je časový limit běžné funkce na Netlify. Když se část nestihne opravit, rozdělí se napůl a zkusí znovu.
+- Model dostane i kontext a odborné výrazy z formuláře a konec předchozí části pro souvislost.
+- Na archu je pak opravený text a tlačítkem **Původní přepis** se dá přepnout zpět. Kopírování a stažení berou verzi, která je právě vidět. Když se korektura nepodaří, zůstane původní přepis a nabídne se **Zkusit znovu**.
+- Funkce text nikam neukládá. Text přepisu ale odchází ke zpracování do Anthropic (USA); u citlivých nahrávek korekturu nechte vypnutou.
+- Korektura neshrnuje, text jen opravuje. Může ale změnit formulace, důležitá místa proto porovnejte s původním přepisem.
 
 ## Arch s přepisem
 
